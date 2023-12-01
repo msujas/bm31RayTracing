@@ -3,14 +3,16 @@ import Shadow
 
 energies = [49000,49000, 49000,49000]
 meridionalFs = [1811.6,3000,10000,1000000]
+nrays = 500000
+
 results=  {}
 eResults = {}
 beams = {}
-nrays = 500000
+
 
 f1 = 3032.8
 f2 = 1811.6
-plot = False
+plot = True
 
 for n,(e,m) in enumerate(zip(energies, meridionalFs)):
     results[n], eResults[n], beams[n] = bm31_oasys_xrd.run(energy=e, monoEnergy=e,nrays= nrays, meridionalDist = m)
@@ -22,7 +24,7 @@ for n,(e,m) in enumerate(zip(energies, meridionalFs)):
     fwhmH = results[n]['fwhm_h']*10 #mm
     fwhmV = results[n]['fwhm_v']*10 #mm
     fwhmE = eResults[n]["fwhm"]
-    print('intensity:',intensity)
+    print(f'intensity: {intensity:.1f}')
     print('fwhm_h:',fwhmH, 'mm')
     print('fwhm_v:',fwhmV, 'mm')
     print(f'energy fwhm: {fwhmE} eV')

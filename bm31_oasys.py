@@ -14,9 +14,11 @@ torroidalMirrorAngle = 3 #mrad from surface
 secondCrystalRot = 0.00
 firstMirrorAngle = 2
 dspacing = 3.13379
-nrays = 2000000
+nrays = 1000000
 fname = 'output.dat'
 eRange = 100
+traceStart = 0
+autoStart = True
 
 def mradSurface_to_degNorm(mrad):
     return 90-mrad*180/(numpy.pi*1000)
@@ -30,22 +32,66 @@ def energy_to_incidentAngle(energy):
 
 # write (1) or not (0) SHADOW files start.xx end.xx star.xx
 iwrite = 0
+writeBeam = 1
 
+def dctToFile(dct,file):
+    string = ''
+    for key in dct:
+        string += f'{key};{dct[key]}\n'
+    f = open(file,'w')
+    f.write(string)
+    f.close()
 
-def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, monoEnergy = 9000, iwrite = 0, fname = None,
-        nrays = 100000):
+def readConfig(file):
+    dct = {}
+    f = open(file,'r')
+    lines = f.read().split('\n')
+    f.close()
+    for line in lines[:-1]:
+        lsplit = line.split(';')
+        dct[lsplit[0]] = lsplit[1]
+    return dct
+
+configFile = 'mirrorsConfig.dat'
+
+def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, monoEnergy = 9000, iwrite = 0, writeBeam=0, fname = None,
+        nrays = 100000, traceStart = 0, autoStart = False):
     torrAngleDeg = mradSurface_to_degNorm(torrAnglemRad)
     colMirrorDeg = mradSurface_to_degNorm(colMirrorRad)
     #
     # initialize shadow3 source (oe0) and beam
     #
-    beam = Shadow.Beam()
+    config = {'energy':energy, 'colMirrorRad': colMirrorRad, 'torrAnglemRad':torrAnglemRad, 'secondCrystalRot':secondCrystalRot,
+              'monoEnergy':monoEnergy,'nrays':nrays}
+    if os.path.exists(configFile):
+        oldConfig = readConfig(configFile)
+
+        if str(config['energy']) != oldConfig['energy'] or str(config['nrays']) != oldConfig['nrays']:
+            autoTraceStart = 0
+        elif str(config['colMirrorRad']) != oldConfig['colMirrorRad']:
+            autoTraceStart = 1
+        elif str(config['monoEnergy']) != oldConfig['monoEnergy']:
+            autoTraceStart = 2
+        elif str(config['secondCrystalRot']) != oldConfig['secondCrystalRot']:
+            autoTraceStart = 3
+        else:
+            autoTraceStart = 4
+        if autoStart:
+            traceStart = autoTraceStart
+    
+    print(f'beginning at {traceStart}')
     oe0 = Shadow.Source()
     oe1 = Shadow.OE()
     oe2 = Shadow.OE()
     oe3 = Shadow.OE()
     oe4 = Shadow.OE()
     oe5 = Shadow.OE()
+
+    beam = Shadow.Beam()
+
+    beamFile = 'beam'
+    if traceStart > 0:
+        beam.load(f'{beamFile}.{traceStart-1:02d}')
 
     #
     # Define variables. See meaning of variables in: 
@@ -227,14 +273,16 @@ def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, seco
         print('writing start.00')
         oe0.write("start.00")
         
-
-    beam.genSource(oe0)
+    
+    if traceStart < 1:
+        beam.genSource(oe0)
     
     if iwrite:
         print('writing end.00')
         oe0.write("end.00")
-        print('writing begin.dat')
-        beam.write("begin.dat")
+    if writeBeam and traceStart < 1:
+        print(f'writing {beamFile}.00')
+        beam.write(f"{beamFile}.00")
 
 
     #
@@ -244,15 +292,16 @@ def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, seco
     if iwrite:
         print('writing start.01')
         oe1.write("start.01")
-    
-    
-    beam.traceOE(oe1,1)
+
+    if traceStart < 2:
+        beam.traceOE(oe1,1)
     
     if iwrite:
         print('writing end.01')
         oe1.write("end.01")
-        print('writing star.01')
-        beam.write("star.01")
+    if writeBeam and traceStart < 2:
+        print(f'writing {beamFile}.01')
+        beam.write(f"{beamFile}.01")
 
 
     #
@@ -262,14 +311,15 @@ def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, seco
     if iwrite:
         print('writing start.02')
         oe2.write("start.02")
-
-    beam.traceOE(oe2,2)
+    if traceStart < 3:
+        beam.traceOE(oe2,2)
 
     if iwrite:
         print('writing end.02')
         oe2.write("end.02")
-        print('writing star.02')
-        beam.write("star.02")
+    if writeBeam and traceStart < 3:
+        print(f'writing {beamFile}.02')
+        beam.write(f"{beamFile}.02")
 
 
     #
@@ -279,14 +329,15 @@ def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, seco
     if iwrite:
         print('writing start.03')
         oe3.write("start.03")
-
-    beam.traceOE(oe3,3)
+    if traceStart < 4:
+        beam.traceOE(oe3,3)
 
     if iwrite:
         print('writing end.03')
         oe3.write("end.03")
-        print('writing star.03')
-        beam.write("star.03")
+    if writeBeam and traceStart < 4:
+        print(f'writing {beamFile}.03')
+        beam.write(f"{beamFile}.03")
 
 
     #
@@ -297,13 +348,15 @@ def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, seco
         print('writing start.04')
         oe4.write("start.04")
 
-    beam.traceOE(oe4,4)
+    if traceStart < 5:
+        beam.traceOE(oe4,4)
 
     if iwrite:
         print('writing end.04')
         oe4.write("end.04")
-        print('writing star.04')
-        beam.write("star.04")
+    if writeBeam and traceStart < 5:
+        print(f'writing {beamFile}.04')
+        beam.write(f"{beamFile}.04")
 
 
     #
@@ -319,8 +372,9 @@ def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, seco
     if iwrite:
         print('writing end.05')
         oe5.write("end.05")
-        print('writing star.05')
-        beam.write("star.05")
+    if writeBeam:
+        print(f'writing {beamFile}.05')
+        beam.write(f"{beamFile}.05")
 
     #print(beam.rays.shape)
 
@@ -340,11 +394,12 @@ def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, seco
     # Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
     #plt.imshow(beam.rays, aspect = 'auto')
     #plt.show()
+    dctToFile(config,configFile)
     return result, energyResult,beam
 
 if __name__ == '__main__':
     result, eResult, beam = run(energy = energy, colMirrorRad=firstMirrorAngle, torrAnglemRad=torroidalMirrorAngle, secondCrystalRot =  secondCrystalRot, 
-                       iwrite=iwrite, monoEnergy=monoEnergy, fname = fname,nrays=nrays)
+                       iwrite=iwrite, writeBeam=writeBeam, monoEnergy=monoEnergy, fname = fname,nrays=nrays, traceStart=traceStart, autoStart=autoStart)
     print(result)
     Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,nolost=1,title="Real space")
     Shadow.ShadowTools.histo1(beam,11,nbins = 201, nolost=  1, ref = 23)

@@ -5,7 +5,7 @@ import Shadow
 import numpy
 np = numpy
 from srxraylib.sources import srfunc
-
+import matplotlib.pyplot as plt
 
 
 energy = 49000
@@ -36,7 +36,8 @@ def meridionalRadius(f1,f2,energy):
 f1 = 3032.8
 f2 = 1811.6
 
-def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist = 1000000, iwrite = 0, nrays = 1000000):
+def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist = 1000000, iwrite = 0, writeBeam = 1, 
+        nrays = 1000000, traceStart = 0):
 
     #
     # initialize shadow3 source (oe0) and beam
@@ -46,7 +47,8 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     oe1 = Shadow.OE()
     oe2 = Shadow.OE()
     oe3 = Shadow.OE()
-
+    if traceStart > 0:
+        beam.load(f'star.{traceStart-1:02d}')
 
     #
     # Define variables. See meaning of variables in: 
@@ -171,12 +173,13 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
 
     if iwrite:
         oe0.write("start.00")
-
-    beam.genSource(oe0)
+    if traceStart < 1:
+        beam.genSource(oe0)
 
     if iwrite:
         oe0.write("end.00")
-        beam.write("begin.dat")
+    if writeBeam and traceStart < 1:
+        beam.write("star.00")
 
 
     #
@@ -185,11 +188,12 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     print("    Running optical element: %d"%(1))
     if iwrite:
         oe1.write("start.01")
-
-    beam.traceOE(oe1,1)
+    if traceStart < 2:
+        beam.traceOE(oe1,1)
 
     if iwrite:
         oe1.write("end.01")
+    if writeBeam and traceStart < 2:
         beam.write("star.01")
 
 
@@ -204,6 +208,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
 
     if iwrite:
         oe2.write("end.02")
+    if writeBeam:
         beam.write("star.02")
 
     #
@@ -235,5 +240,12 @@ if __name__ == '__main__':
     print('energy fwhm', eResult['fwhm'], 'eV')
     Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,nolost=1,title="Real space")
     Shadow.ShadowTools.histo1(beam,11,nbins = 201, nolost=  1, ref = 23)
-    #print(eResult.keys())
-
+    #plt.stairs(eResult['histogram'],eResult['bins'])
+    #plt.xlabel('energy (eV)')
+    #plt.ylabel('intensity')
+    #plt.show()
+    #print(eResult)
+    #print(result)
+    #plt.imshow(result['histogram'].transpose(), extent = [result['bin_h_edges'][0],result['bin_h_edges'][-1],
+    #                                                      result['bin_v_edges'][0],result['bin_v_edges'][-1]], aspect = 'auto')
+    #plt.show()
