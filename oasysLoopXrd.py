@@ -15,7 +15,7 @@ f2 = 1811.6
 plot = True
 
 for n,(e,m) in enumerate(zip(energies, meridionalFs)):
-    results[n], eResults[n], beams[n] = bm31_oasys_xrd.run(energy=e, monoEnergy=e,nrays= nrays, meridionalDist = m)
+    results[n], eResults[n], beams[n] = bm31_oasys_xrd.run(energy=e, monoEnergy=e,nrays= nrays, meridionalDist = m, autoStart=True)
 
 for n,(e,m) in enumerate(zip(energies, meridionalFs)):
     print(f'{e} eV')

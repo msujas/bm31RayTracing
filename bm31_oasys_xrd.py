@@ -6,7 +6,8 @@ import numpy
 np = numpy
 from srxraylib.sources import srfunc
 import matplotlib.pyplot as plt
-
+from bm31_oasys import dctToFile, readConfig
+import os
 
 energy = 49000
 monoEnergy = 49000
@@ -20,8 +21,9 @@ def mradSurface_to_degNorm(mrad):
 
 # write (1) or not (0) SHADOW files start.xx end.xx star.xx
 iwrite = 0
-dspacing = 3.13379
+
 def energyToTheta(energy):
+    dspacing = 3.13379
     wavelength = 12398.47/energy
     return np.arcsin(wavelength/(2*dspacing))*180/np.pi
 
@@ -33,22 +35,40 @@ def meridionalRadius(f1,f2,energy):
     theta = energyToTheta(energy)*np.pi/180
     return ((f1+f2)**2 - 4*f1*f2*np.sin(theta)**2)**0.5/(np.sin(2*theta))
 
-f1 = 3032.8
-f2 = 1811.6
 
-def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist = 1000000, iwrite = 0, writeBeam = 1, 
-        nrays = 1000000, traceStart = 0):
+
+
+configFile = 'xrdConfig.dat'
+
+def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist = 1000000, iwrite = False, writeBeam = True, 
+        nrays = 1000000, traceStart = 0, autoStart = False):
 
     #
     # initialize shadow3 source (oe0) and beam
     #
+    f1 = 3032.8
+    f2 = 1811.6
     beam = Shadow.Beam()
     oe0 = Shadow.Source()
     oe1 = Shadow.OE()
     oe2 = Shadow.OE()
     oe3 = Shadow.OE()
+    beamFile = 'starXRD'
+    config = {'energy':energy,  'monoEnergy':monoEnergy,'nrays':nrays, 'focalEnergy': focalEnergy, 'meridionalDist': meridionalDist}
+    if os.path.exists(configFile):
+        oldConfig = readConfig(configFile)
+        if str(config['energy']) != oldConfig['energy'] or str(config['nrays']) != oldConfig['nrays']:
+            autoTraceStart = 0
+        elif str(config['monoEnergy']) != oldConfig['monoEnergy']:
+            autoTraceStart = 1
+        else:
+            autoTraceStart = 2
+        if autoStart:
+            traceStart = autoTraceStart
     if traceStart > 0:
-        beam.load(f'star.{traceStart-1:02d}')
+        loadfile = f'{beamFile}.{traceStart-1:02d}'
+        print(f'loading {loadfile}')
+        beam.load(loadfile)
 
     #
     # Define variables. See meaning of variables in: 
@@ -118,7 +138,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     oe0.WZSOU = 0.0
 
     print(oe0.PH1)
-
+    #first crystal
     oe1.DUMMY = 1.0
     oe1.FHIT_C = 1
     oe1.FILE_REFL = b'C:/Users/kenneth1a/Documents/mirrors/Si5_55.111'
@@ -135,6 +155,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     oe1.T_IMAGE = 5.0
     oe1.T_SOURCE = f1
 
+    #second crystal
     oe2.ALPHA = 180.0
     oe2.DUMMY = 1.0
     oe2.FHIT_C = 1
@@ -179,7 +200,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     if iwrite:
         oe0.write("end.00")
     if writeBeam and traceStart < 1:
-        beam.write("star.00")
+        beam.write(f"{beamFile}.00")
 
 
     #
@@ -194,7 +215,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     if iwrite:
         oe1.write("end.01")
     if writeBeam and traceStart < 2:
-        beam.write("star.01")
+        beam.write(f"{beamFile}.01")
 
 
     #
@@ -209,20 +230,22 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     if iwrite:
         oe2.write("end.02")
     if writeBeam:
-        beam.write("star.02")
+        beam.write(f"{beamFile}.02")
 
     #
     #run optical element 3
     #
     print("    Running optical element: %d"%(3))
     if iwrite:
-        oe3.write("start.03")
+        oe3.write(f"start.03")
 
     #beam.traceOE(oe3,3)
 
     #if iwrite:
     #    oe3.write("end.03")
     #    beam.write("star.03")
+    #if writeBeam:
+    #    beam.write(f"{beamFile}.03")
     result = beam.histo2(1,3, nbins= 101,nolost=1)
     eResult = beam.histo1(11,nbins = 201, nolost=  1, ref = 23)
     #Shadow.ShadowTools.plotxy(beam,1,3,block=block,nbins=101,nolost=1,title="Real space")
@@ -230,6 +253,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     # Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
     #plt.imshow(beam.rays, aspect = 'auto')
     #plt.show()
+    dctToFile(config,configFile)
     return result, eResult,beam
 
 if __name__ == '__main__':
