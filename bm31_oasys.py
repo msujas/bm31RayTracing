@@ -19,6 +19,7 @@ fname = 'output.dat'
 eRange = 100
 traceStart = 0
 autoStart = True
+writeBeam = True
 
 def mradSurface_to_degNorm(mrad):
     return 90-mrad*180/(numpy.pi*1000)
@@ -27,12 +28,6 @@ def mradSurface_to_degNorm(mrad):
 def energy_to_incidentAngle(energy):
     wavelength = 12398.47/energy
     return 90-np.arcsin(wavelength/(2*dspacing))*180/np.pi
-
-
-
-# write (1) or not (0) SHADOW files start.xx end.xx star.xx
-iwrite = 0
-writeBeam = 1
 
 def dctToFile(dct,file):
     string = ''
@@ -54,7 +49,15 @@ def readConfig(file):
 
 configFile = 'mirrorsConfig.dat'
 
-def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, monoEnergy = 9000, iwrite = 0, writeBeam=0, fname = None,
+def whereStart(config,oldConfig, startDct):
+    startDctSorted = dict(sorted(startDct.items(), key = lambda x: x[1]))
+    for item in startDctSorted:
+        if str(config[item]) != oldConfig[item]:
+            return startDct[item]
+    return startDct[item]+1
+
+
+def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, monoEnergy = 9000, writeBeam=0, fname = None,
         nrays = 100000, traceStart = 0, autoStart = False):
     torrAngleDeg = mradSurface_to_degNorm(torrAnglemRad)
     colMirrorDeg = mradSurface_to_degNorm(colMirrorRad)
@@ -63,19 +66,10 @@ def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, seco
     #
     config = {'energy':energy, 'colMirrorRad': colMirrorRad, 'torrAnglemRad':torrAnglemRad, 'secondCrystalRot':secondCrystalRot,
               'monoEnergy':monoEnergy,'nrays':nrays}
+    startDct = {'energy':0, 'colMirrorRad':2, 'monoEnergy':3,'secondCrystalRot':4,'torrAnglemRad':5,'nrays':0}
     if os.path.exists(configFile):
         oldConfig = readConfig(configFile)
-
-        if str(config['energy']) != oldConfig['energy'] or str(config['nrays']) != oldConfig['nrays']:
-            autoTraceStart = 0
-        elif str(config['colMirrorRad']) != oldConfig['colMirrorRad']:
-            autoTraceStart = 1
-        elif str(config['monoEnergy']) != oldConfig['monoEnergy']:
-            autoTraceStart = 2
-        elif str(config['secondCrystalRot']) != oldConfig['secondCrystalRot']:
-            autoTraceStart = 3
-        else:
-            autoTraceStart = 4
+        autoTraceStart = whereStart(config,oldConfig,startDct)
         if autoStart:
             traceStart = autoTraceStart
     
@@ -268,116 +262,57 @@ def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, seco
 
 
     #Run SHADOW to create the source
-
-    if iwrite:
-        print('writing start.00')
-        oe0.write("start.00")
-        
-    
     if traceStart < 1:
         beam.genSource(oe0)
     
-    if iwrite:
-        print('writing end.00')
-        oe0.write("end.00")
     if writeBeam and traceStart < 1:
         print(f'writing {beamFile}.00')
         beam.write(f"{beamFile}.00")
 
-
-    #
     #run optical element 1
-    #
-    print("    Running optical element: %d"%(1))
-    if iwrite:
-        print('writing start.01')
-        oe1.write("start.01")
-
     if traceStart < 2:
+        print("    Running optical element: %d"%(1))
         beam.traceOE(oe1,1)
     
-    if iwrite:
-        print('writing end.01')
-        oe1.write("end.01")
     if writeBeam and traceStart < 2:
         print(f'writing {beamFile}.01')
         beam.write(f"{beamFile}.01")
 
-
-    #
     #run optical element 2
-    #
-    print("    Running optical element: %d"%(2))
-    if iwrite:
-        print('writing start.02')
-        oe2.write("start.02")
     if traceStart < 3:
+        print("    Running optical element: %d"%(2))
         beam.traceOE(oe2,2)
 
-    if iwrite:
-        print('writing end.02')
-        oe2.write("end.02")
     if writeBeam and traceStart < 3:
         print(f'writing {beamFile}.02')
         beam.write(f"{beamFile}.02")
 
-
-    #
     #run optical element 3
-    #
-    print("    Running optical element: %d"%(3))
-    if iwrite:
-        print('writing start.03')
-        oe3.write("start.03")
     if traceStart < 4:
+        print("    Running optical element: %d"%(3))
         beam.traceOE(oe3,3)
 
-    if iwrite:
-        print('writing end.03')
-        oe3.write("end.03")
     if writeBeam and traceStart < 4:
         print(f'writing {beamFile}.03')
         beam.write(f"{beamFile}.03")
 
-
-    #
     #run optical element 4
-    #
-    print("    Running optical element: %d"%(4))
-    if iwrite:
-        print('writing start.04')
-        oe4.write("start.04")
-
     if traceStart < 5:
+        print("    Running optical element: %d"%(4))
         beam.traceOE(oe4,4)
 
-    if iwrite:
-        print('writing end.04')
-        oe4.write("end.04")
     if writeBeam and traceStart < 5:
         print(f'writing {beamFile}.04')
         beam.write(f"{beamFile}.04")
 
-
-    #
     #run optical element 5
-    #
-    print("    Running optical element: %d"%(5))
-    if iwrite:
-        print('writing start.05')
-        oe5.write("start.05")
+    if traceStart < 6:
+        print("    Running optical element: %d"%(5))
+        beam.traceOE(oe5,5)
 
-    beam.traceOE(oe5,5)
-
-    if iwrite:
-        print('writing end.05')
-        oe5.write("end.05")
     if writeBeam:
         print(f'writing {beamFile}.05')
         beam.write(f"{beamFile}.05")
-
-    #print(beam.rays.shape)
-
 
     result = beam.histo2(1,3, nbins= 101,nolost=1)
     if fname != None:
@@ -399,7 +334,7 @@ def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, seco
 
 if __name__ == '__main__':
     result, eResult, beam = run(energy = energy, colMirrorRad=firstMirrorAngle, torrAnglemRad=torroidalMirrorAngle, secondCrystalRot =  secondCrystalRot, 
-                       iwrite=iwrite, writeBeam=writeBeam, monoEnergy=monoEnergy, fname = fname,nrays=nrays, traceStart=traceStart, autoStart=autoStart)
+                        writeBeam=writeBeam, monoEnergy=monoEnergy, fname = fname,nrays=nrays, traceStart=traceStart, autoStart=autoStart)
     print(result)
     Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,nolost=1,title="Real space")
     Shadow.ShadowTools.histo1(beam,11,nbins = 201, nolost=  1, ref = 23)

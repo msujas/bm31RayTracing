@@ -6,63 +6,67 @@ import numpy
 np = numpy
 from srxraylib.sources import srfunc
 import matplotlib.pyplot as plt
-from bm31_oasys import dctToFile, readConfig
+from bm31_oasys import dctToFile, readConfig, whereStart
 import os
 
 energy = 49000
-monoEnergy = 49000
+monoEnergy = 47000
 focalEnergy = 49000
-torroidalMirrorAngle = 3 #mrad from surface
-nrays = 1000000
+meridionalDist = 10000
+nrays = 500000
 eRange = 200
 
+
+autoStart = True
+
+
+
+f1 = 3032.8
+f2 = 1811.6
 def mradSurface_to_degNorm(mrad):
     return 90-mrad*180/(numpy.pi*1000)
-
-# write (1) or not (0) SHADOW files start.xx end.xx star.xx
-iwrite = 0
 
 def energyToTheta(energy):
     dspacing = 3.13379
     wavelength = 12398.47/energy
     return np.arcsin(wavelength/(2*dspacing))*180/np.pi
 
-def saggitalRadius(f1,f2,energy):
+def saggitalRadius(energy,f1=f1,f2=f2):
     theta = energyToTheta(energy)*np.pi/180
     return (2*f1*f2*np.sin(theta)/(f1+f2))
+
+sr = saggitalRadius(focalEnergy,f1,f2)
+def srTof2(energy,sr=sr,f1=f1):
+    theta = energyToTheta(energy)*np.pi/180
+    return f1*sr/(2*f1*np.sin(theta) - sr)
 
 def meridionalRadius(f1,f2,energy):
     theta = energyToTheta(energy)*np.pi/180
     return ((f1+f2)**2 - 4*f1*f2*np.sin(theta)**2)**0.5/(np.sin(2*theta))
 
 
-
-
 configFile = 'xrdConfig.dat'
 
-def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist = 1000000, iwrite = False, writeBeam = True, 
-        nrays = 1000000, traceStart = 0, autoStart = False):
-
+def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist = 1000000, writeBeam = True, 
+        nrays = 1000000, traceStart = 0, autoStart = False, eRange = eRange):
+    
     #
     # initialize shadow3 source (oe0) and beam
     #
-    f1 = 3032.8
-    f2 = 1811.6
+
+    imageDist = 1811.6
     beam = Shadow.Beam()
     oe0 = Shadow.Source()
     oe1 = Shadow.OE()
     oe2 = Shadow.OE()
     oe3 = Shadow.OE()
     beamFile = 'starXRD'
-    config = {'energy':energy,  'monoEnergy':monoEnergy,'nrays':nrays, 'focalEnergy': focalEnergy, 'meridionalDist': meridionalDist}
+    config = {'energy':energy,  'monoEnergy':monoEnergy,'nrays':nrays, 'focalEnergy': focalEnergy, 'meridionalDist': meridionalDist,
+              'f2':f2,'eRange':eRange}
+    startDct = {'energy':0,'nrays':0,'monoEnergy':1,'focalEnergy':2, 'meridionalDist': 2, 'eRange':0}
     if os.path.exists(configFile):
         oldConfig = readConfig(configFile)
-        if str(config['energy']) != oldConfig['energy'] or str(config['nrays']) != oldConfig['nrays']:
-            autoTraceStart = 0
-        elif str(config['monoEnergy']) != oldConfig['monoEnergy']:
-            autoTraceStart = 1
-        else:
-            autoTraceStart = 2
+        autoTraceStart = whereStart(config,oldConfig,startDct)
         if autoStart:
             traceStart = autoTraceStart
     if traceStart > 0:
@@ -174,8 +178,8 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     oe2.RWIDX2 = 3.5
     oe2.R_LAMBDA = 5000.0
     oe2.R_MAJ = meridionalRadius(f1,meridionalDist,focalEnergy)
-    oe2.R_MIN = saggitalRadius(f1,f2,focalEnergy)
-    oe2.T_IMAGE = f2
+    oe2.R_MIN = saggitalRadius(focalEnergy,f1,f2)
+    oe2.T_IMAGE = imageDist
     oe2.T_SOURCE = 5.0
     
     #oe3.DUMMY = 1.0
@@ -192,28 +196,17 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     #oe3.T_SOURCE = 0.0
     
 
-    if iwrite:
-        oe0.write("start.00")
     if traceStart < 1:
         beam.genSource(oe0)
 
-    if iwrite:
-        oe0.write("end.00")
     if writeBeam and traceStart < 1:
         beam.write(f"{beamFile}.00")
 
-
-    #
     #run optical element 1
-    #
-    print("    Running optical element: %d"%(1))
-    if iwrite:
-        oe1.write("start.01")
     if traceStart < 2:
+        print("    Running optical element: %d"%(1))
         beam.traceOE(oe1,1)
 
-    if iwrite:
-        oe1.write("end.01")
     if writeBeam and traceStart < 2:
         beam.write(f"{beamFile}.01")
 
@@ -221,29 +214,20 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     #
     #run optical element 2
     #
-    print("    Running optical element: %d"%(2))
-    if iwrite:
-        oe2.write("start.02")
+    if traceStart < 3:
+        print("    Running optical element: %d"%(2))
+        beam.traceOE(oe2,2)
 
-    beam.traceOE(oe2,2)
-
-    if iwrite:
-        oe2.write("end.02")
     if writeBeam:
         beam.write(f"{beamFile}.02")
 
     #
     #run optical element 3
     #
-    print("    Running optical element: %d"%(3))
-    if iwrite:
-        oe3.write(f"start.03")
+    #print("    Running optical element: %d"%(3))
 
+    
     #beam.traceOE(oe3,3)
-
-    #if iwrite:
-    #    oe3.write("end.03")
-    #    beam.write("star.03")
     #if writeBeam:
     #    beam.write(f"{beamFile}.03")
     result = beam.histo2(1,3, nbins= 101,nolost=1)
@@ -257,7 +241,8 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     return result, eResult,beam
 
 if __name__ == '__main__':
-    result, eResult, beam = run(energy = energy, iwrite=iwrite, monoEnergy=monoEnergy,nrays = nrays, focalEnergy=focalEnergy)
+    result, eResult, beam = run(energy = energy, monoEnergy=monoEnergy,nrays = nrays, focalEnergy=focalEnergy, 
+                                meridionalDist = meridionalDist, autoStart=autoStart)
     print('intensity:',result['intensity'])
     print('fwhm_h', result['fwhm_h']*10, 'mm')
     print('fwhm_v', result['fwhm_v']*10, 'mm')
