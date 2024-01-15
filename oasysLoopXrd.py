@@ -1,6 +1,7 @@
 import bm31_oasys_xrd
 import Shadow
 import numpy as np
+from bm31_oasys import fluxEnergy, fluxDensity
 
 
 energies =  [47500]*6 #np.linspace(47000,51000,5)
@@ -17,12 +18,6 @@ eRange = 200
 plot = True
 
 
-fluxFile = r'C:\Users\kenneth1a\Documents\mirrors/spectrum5000_150000.dat'
-fluxArray = np.loadtxt(fluxFile,comments='#', unpack=True)
-fluxEnergy = fluxArray[0]
-fluxDensity = fluxArray[1]
-powerDensity = fluxArray[2]
-
 for n,(e,m,me) in enumerate(zip(energies, meridionalFs,monoEnergies)):
     results[n], eResults[n], beams[n] = bm31_oasys_xrd.run(energy=e, monoEnergy=me,nrays= nrays, focalEnergy=focalEnergy, eRange=eRange,
                                                            meridionalDist = m,  autoStart=True, imageDist=bm31_oasys_xrd.f2 + 20)
@@ -38,17 +33,18 @@ for n,(e,m,me) in enumerate(zip(energies, meridionalFs,monoEnergies)):
     fluxInitial = fluxDensity[energyIndex]
     NphotonsI = fluxInitial*eRange/(e/1000) #approximate
     NphotonsF = NphotonsI*intRatio #approximate
-    print(f'source flux density: {fluxInitial:.6e}')
-    print(f'source approx Nphotons: {NphotonsI:.6e}')
+    print()
     fluxEnd = intRatio*fluxInitial #this is approximating equal flux density in the energy range
     f2 = bm31_oasys_xrd.srTof2(me,sr)
     string = (f"{e} eV\n"
+    f"source flux density: {fluxInitial:.6e}\n"
+    f"source total photons/s: {NphotonsI:.6e}\n"
     f"meridional fdist: {m} cm\n"
     f"mono energy: {me} eV\n"
     f"focal distance: {f2:.1f} cm\n"
     f"intensity: {intensity:.1f}\n"
     f"final flux: {fluxEnd:.6e}\n"
-    f"final photons: {NphotonsF:.6e}\n"
+    f"final photons/s: {NphotonsF:.6e}\n"
     f"fwhm_h: {fwhmH} mm\n"
     f"fwhm_v: {fwhmV} mm\n"
     f"energy fwhm: {fwhmE} eV\n"

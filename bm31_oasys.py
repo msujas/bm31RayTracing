@@ -10,17 +10,24 @@ import matplotlib.pyplot as plt
 
 energy = 9000
 monoEnergy = 9000
+harmonic = False
 torroidalMirrorAngle = 3 #mrad from surface
-secondCrystalRot = 0.00
+secondCrystalRot = 0.001
 firstMirrorAngle = 2
 dspacing = 3.13379
 nrays = 1000000
 fname = 'output.dat'
 eRange = 100
-harmonic = False
+
 traceStart = 0
 autoStart = True
 writeBeam = True
+
+fluxFile = r'C:\Users\kenneth1a\Documents\mirrors/spectrum5000_150000.dat'
+fluxArray = np.loadtxt(fluxFile,comments='#', unpack=True)
+fluxEnergy = fluxArray[0]
+fluxDensity = fluxArray[1]
+powerDensity = fluxArray[2]
 
 def mradSurface_to_degNorm(mrad):
     return 90-mrad*180/(numpy.pi*1000)
@@ -58,16 +65,16 @@ def whereStart(config,oldConfig, startDct):
     return startDct[item]+1
 
 
-def run(energy = 9000, eRange = eRange, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, monoEnergy = 9000, writeBeam=0, fname = None,
+def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, monoEnergy = 9000, writeBeam=0, fname = None,
         nrays = 100000, traceStart = 0, autoStart = False, harmonic = False):
     torrAngleDeg = mradSurface_to_degNorm(torrAnglemRad)
     colMirrorDeg = mradSurface_to_degNorm(colMirrorRad)
     #
     # initialize shadow3 source (oe0) and beam
     #
-    config = {'energy':energy, 'colMirrorRad': colMirrorRad, 'torrAnglemRad':torrAnglemRad, 'secondCrystalRot':secondCrystalRot,
-              'monoEnergy':monoEnergy,'nrays':nrays}
-    startDct = {'energy':0, 'colMirrorRad':2, 'monoEnergy':3,'secondCrystalRot':4,'torrAnglemRad':5,'nrays':0}
+    config = {'energy':energy,'eRange':eRange, 'colMirrorRad': colMirrorRad, 'torrAnglemRad':torrAnglemRad, 'secondCrystalRot':secondCrystalRot,
+              'monoEnergy':monoEnergy,'nrays':nrays, 'harmonic':harmonic}
+    startDct = {'energy':0, 'eRange': 0, 'colMirrorRad':2, 'monoEnergy':3,'secondCrystalRot':4,'torrAnglemRad':5,'nrays':0, 'harmonic': 3}
     if os.path.exists(configFile):
         oldConfig = readConfig(configFile)
         autoTraceStart = whereStart(config,oldConfig,startDct)
@@ -129,7 +136,7 @@ def run(energy = 9000, eRange = eRange, colMirrorRad = 3.0019663, torrAnglemRad 
             enerMax=150000.0,
             nPoints=10000,
             electronCurrent=200*1e-3,
-            outFile="spectrum.dat",
+            outFile=fluxFile,
             elliptical=False)
         from srxraylib.plot.gol import plot
         plot(e, f, xlog=False, ylog=False,show=False,
@@ -346,7 +353,7 @@ def run(energy = 9000, eRange = eRange, colMirrorRad = 3.0019663, torrAnglemRad 
     else:
         efname = None
     #energyResult = beam.histo1(11,nbins = 101, nolost=  1, write = efname)
-    energyResult = beam.histo1(11,nbins = 201, nolost=  1, write = efname, ref = 23)
+    energyResult = beam.histo1(11,nbins = 501, nolost=  1, write = efname, ref = 23)
     #Shadow.ShadowTools.plotxy(beam,1,3,block=block,nbins=101,nolost=1,title="Real space")
     # Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,nolost=1,title="Phase space X")
     # Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
@@ -356,10 +363,30 @@ def run(energy = 9000, eRange = eRange, colMirrorRad = 3.0019663, torrAnglemRad 
     return result, energyResult,beam
 
 if __name__ == '__main__':
-    result, eResult, beam = run(energy = energy, colMirrorRad=firstMirrorAngle, torrAnglemRad=torroidalMirrorAngle, secondCrystalRot =  secondCrystalRot, 
-                        writeBeam=writeBeam, monoEnergy=monoEnergy, fname = fname,nrays=nrays, traceStart=traceStart, autoStart=autoStart)
-    print(result)
+    result, eResult, beam = run(energy = energy, eRange = eRange, colMirrorRad=firstMirrorAngle, torrAnglemRad=torroidalMirrorAngle, 
+                                secondCrystalRot =  secondCrystalRot, writeBeam=writeBeam, monoEnergy=monoEnergy, 
+                                fname = fname,nrays=nrays, traceStart=traceStart, autoStart=autoStart, harmonic=harmonic)
+    #print(result)
+    intensity = result['intensity']
+    intRatio = intensity/nrays
+    energyIndex = np.abs(fluxEnergy-energy).argmin()
+    fluxInitial = fluxDensity[energyIndex]
+    
+    print()
+    fluxEnd = intRatio*fluxInitial #this is approximating equal flux density in the energy range
+    NphotonsI = fluxInitial*eRange/(energy/1000) #approximate
+    NphotonsF = NphotonsI*intRatio #approximate
+    eFWHM = eResult['fwhm']
+    string = (f"source flux density: {fluxInitial:.6e}\n"
+    f"source total photons/s: {NphotonsI:.6e}\n"
+    f"intensity: {result['intensity']:.1f}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
+    f"final flux: {fluxEnd:.6e}\n"
+    f"final photons/s {NphotonsF:.6e}\n"
+    f"fwhm_h: {result['fwhm_h']*10:.6f} mm\n"
+    f"fwhm_v: {result['fwhm_v']*10:.6f} mm\n"
+    f"energy fwhm: {eFWHM:.6f} eV\n")
+    print(string)
     Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,nolost=1,title="Real space")
-    Shadow.ShadowTools.histo1(beam,11,nbins = 201, nolost=  1, ref = 23)
+    Shadow.ShadowTools.histo1(beam,11,nbins = 501, nolost=  1, ref = 23)
     #Shadow.ShadowTools.histo1(beam,11)
 

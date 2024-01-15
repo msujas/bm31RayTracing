@@ -6,16 +6,16 @@ import numpy
 np = numpy
 from srxraylib.sources import srfunc
 import matplotlib.pyplot as plt
-from bm31_oasys import dctToFile, readConfig, whereStart
+from bm31_oasys import dctToFile, readConfig, whereStart, fluxEnergy, fluxDensity
 import os
 
-energy = 49000
-monoEnergy = 49000
+energy = 49000*3
+monoEnergy = 49000*3
 focalEnergy = 47000
 meridionalDist = 10000
 nrays = 500000
 eRange = 200
-harmonic = False
+harmonic = True
 
 autoStart = True
 
@@ -238,7 +238,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     #if writeBeam:
     #    beam.write(f"{beamFile}.03")
     result = beam.histo2(1,3, nbins= 101,nolost=1)
-    eResult = beam.histo1(11,nbins = 201, nolost=  1, ref = 23)
+    eResult = beam.histo1(11,nbins = 501, nolost=  1, ref = 23)
     #Shadow.ShadowTools.plotxy(beam,1,3,block=block,nbins=101,nolost=1,title="Real space")
     # Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,nolost=1,title="Phase space X")
     # Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
@@ -250,12 +250,35 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
 if __name__ == '__main__':
     result, eResult, beam = run(energy = energy, monoEnergy=monoEnergy,nrays = nrays, focalEnergy=focalEnergy, 
                                 meridionalDist = meridionalDist, autoStart=autoStart, harmonic=harmonic)
-    print('intensity:',result['intensity'])
-    print('fwhm_h', result['fwhm_h']*10, 'mm')
-    print('fwhm_v', result['fwhm_v']*10, 'mm')
-    print('energy fwhm', eResult['fwhm'], 'eV')
+    intensity = result['intensity']
+    fwhmH = result['fwhm_h']*10 #mm
+    fwhmV = result['fwhm_v']*10 #mm
+    fwhmE = eResult["fwhm"]
+    intRatio = intensity/nrays
+    energyIndex = np.abs(fluxEnergy-energy).argmin()
+    fluxInitial = fluxDensity[energyIndex]
+    NphotonsI = fluxInitial*eRange/(energy/1000) #approximate
+    NphotonsF = NphotonsI*intRatio #approximate
+    print()
+    fluxEnd = intRatio*fluxInitial #this is approximating equal flux density in the energy range
+    f2 = srTof2(monoEnergy,sr)
+    string = (f"{energy} eV\n"
+    f"source flux density: {fluxInitial:.6e}\n"
+    f"source total photons/s: {NphotonsI:.6e}\n"
+    f"meridional fdist: {meridionalDist} cm\n"
+    f"mono energy: {monoEnergy} eV\n"
+    f"focal distance: {f2:.1f} cm\n"
+    f"intensity: {intensity:.1f}\n"
+    f"final flux: {fluxEnd:.6e}\n"
+    f"final photons/s: {NphotonsF:.6e}\n"
+    f"fwhm_h: {fwhmH} mm\n"
+    f"fwhm_v: {fwhmV} mm\n"
+    f"energy fwhm: {fwhmE} eV\n"
+    f"intensity/fwhm_v: {intensity/fwhmV:.1f}\n"
+    f"intensity/(fwhm_v*fwhm_h) {intensity/(fwhmV*fwhmH):.1f}\n")
+    print(string)
     Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,nolost=1,title="Real space")
-    Shadow.ShadowTools.histo1(beam,11,nbins = 2001, nolost=  1, ref = 23)
+    Shadow.ShadowTools.histo1(beam,11,nbins = 501, nolost=  1, ref = 23)
     
     #plt.stairs(eResult['histogram'],eResult['bins'])
     #plt.xlabel('energy (eV)')
