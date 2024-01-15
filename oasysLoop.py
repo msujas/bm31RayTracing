@@ -13,6 +13,7 @@ beams = {}
 nrays = 1000000
 eRange = 100
 plot = True
+harmonic = False
 
 fluxFile = r'C:\Users\kenneth1a\Documents\mirrors/spectrum5000_150000.dat'
 fluxArray = np.loadtxt(fluxFile,comments='#', unpack=True)
@@ -24,7 +25,7 @@ for n, (energy, mEnergy, colAngle, torroidalMirrorAngle, secondCrystalRot) in en
                                                                                             torroidalMirrorAngles,secondCrystalRots)):
     results[n],eResults[n], beams[n] = bm31_oasys.run(energy=energy, monoEnergy=mEnergy, colMirrorRad=colAngle, eRange=eRange,
                                                       torrAnglemRad=torroidalMirrorAngle, secondCrystalRot=secondCrystalRot,  
-                                                      nrays = nrays, writeBeam=True, autoStart=True)
+                                                      nrays = nrays, writeBeam=True, autoStart=True, harmonic = harmonic)
 
 
 for n in results:
@@ -48,6 +49,7 @@ for n in results:
     if plot:
         Shadow.ShadowTools.plotxy(beams[n],1,3,nbins=101,nolost=1,title="Real space")
         Shadow.ShadowTools.histo1(beams[n],11,nbins = 201, nolost=  1, ref = 23)
+    print()
 
 
 

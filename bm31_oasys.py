@@ -17,6 +17,7 @@ dspacing = 3.13379
 nrays = 1000000
 fname = 'output.dat'
 eRange = 100
+harmonic = False
 traceStart = 0
 autoStart = True
 writeBeam = True
@@ -58,7 +59,7 @@ def whereStart(config,oldConfig, startDct):
 
 
 def run(energy = 9000, eRange = eRange, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, monoEnergy = 9000, writeBeam=0, fname = None,
-        nrays = 100000, traceStart = 0, autoStart = False):
+        nrays = 100000, traceStart = 0, autoStart = False, harmonic = False):
     torrAngleDeg = mradSurface_to_degNorm(torrAnglemRad)
     colMirrorDeg = mradSurface_to_degNorm(colMirrorRad)
     #
@@ -83,6 +84,12 @@ def run(energy = 9000, eRange = eRange, colMirrorRad = 3.0019663, torrAnglemRad 
 
     beam = Shadow.Beam()
 
+    file111 = b'C:/Users/kenneth1a/Documents/mirrors/Si5_55.111'
+    file333 = b'C:/Users/kenneth1a/Documents/mirrors/bragg333.dat'
+    if harmonic:
+        dcmfile = file333
+    else:
+        dcmfile = file111
     beamFile = 'beam'
     if traceStart > 0:
         beam.load(f'{beamFile}.{traceStart-1:02d}')
@@ -213,7 +220,7 @@ def run(energy = 9000, eRange = eRange, colMirrorRad = 3.0019663, torrAnglemRad 
     oe3.ALPHA = 0
     oe3.DUMMY = 1.0
     oe3.FHIT_C = 1
-    oe3.FILE_REFL = b'C:/Users/kenneth1a/Documents/mirrors/Si5_55.111'
+    oe3.FILE_REFL = dcmfile
     oe3.FWRITE = 1
     oe3.F_CENTRAL = 1
     oe3.F_CRYSTAL = 1
@@ -234,7 +241,7 @@ def run(energy = 9000, eRange = eRange, colMirrorRad = 3.0019663, torrAnglemRad 
     oe4.ALPHA = 180.0
     oe4.DUMMY = 1.0
     oe4.FHIT_C = 1
-    oe4.FILE_REFL = b'C:/Users/kenneth1a/Documents/mirrors/Si5_55.111'
+    oe4.FILE_REFL = dcmfile
     oe4.FWRITE = 1
     oe4.F_CENTRAL = 1
     oe4.F_CRYSTAL = 1
