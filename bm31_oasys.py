@@ -57,7 +57,7 @@ def whereStart(config,oldConfig, startDct):
     return startDct[item]+1
 
 
-def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, monoEnergy = 9000, writeBeam=0, fname = None,
+def run(energy = 9000, eRange = eRange, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, monoEnergy = 9000, writeBeam=0, fname = None,
         nrays = 100000, traceStart = 0, autoStart = False):
     torrAngleDeg = mradSurface_to_degNorm(torrAnglemRad)
     colMirrorDeg = mradSurface_to_degNorm(colMirrorRad)
@@ -114,6 +114,22 @@ def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, seco
     outFile        =b'C:\\Users\\kenneth1a\\Documents\\mirrors\\xshwig.sha',
     elliptical     =False)
 
+    calculate_spectrum = False
+
+    if calculate_spectrum:
+        e, f, w = srfunc.wiggler_spectrum(traj,
+            enerMin=5000.0,
+            enerMax=150000.0,
+            nPoints=10000,
+            electronCurrent=200*1e-3,
+            outFile="spectrum.dat",
+            elliptical=False)
+        from srxraylib.plot.gol import plot
+        plot(e, f, xlog=False, ylog=False,show=False,
+            xtitle="Photon energy [eV]",ytitle="Flux [Photons/s/0.1%bw]",title="Flux")
+        plot(e, w, xlog=False, ylog=False,show=True,
+            xtitle="Photon energy [eV]",ytitle="Spectral Power [E/eV]",title="Spectral Power") 
+        return        
     #oe0 - wiggler source
     oe0.BENER = 6.0
     oe0.CONV_FACT = 100.0
@@ -137,7 +153,7 @@ def run(energy = 9000, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, seco
     oe0.IDO_X_S = 0
     oe0.IDO_Y_S = 0
     oe0.IDO_Z_S = 0
-    oe0.ISTAR1 = 5676561
+    oe0.ISTAR1 = 5676561 #seed value, takes any odd number from 1000 to 1000000
     oe0.NCOL = 0
     oe0.NPOINT = nrays
     oe0.NTOTALPOINT = 0

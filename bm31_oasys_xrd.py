@@ -10,19 +10,19 @@ from bm31_oasys import dctToFile, readConfig, whereStart
 import os
 
 energy = 49000
-monoEnergy = 47000
-focalEnergy = 49000
+monoEnergy = 49000
+focalEnergy = 47000
 meridionalDist = 10000
 nrays = 500000
 eRange = 200
-
+harmonic = False
 
 autoStart = True
 
 
-
 f1 = 3032.8
 f2 = 1811.6
+
 def mradSurface_to_degNorm(mrad):
     return 90-mrad*180/(numpy.pi*1000)
 
@@ -48,13 +48,20 @@ def meridionalRadius(f1,f2,energy):
 configFile = 'xrdConfig.dat'
 
 def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist = 1000000, writeBeam = True, 
-        nrays = 1000000, traceStart = 0, autoStart = False, eRange = eRange):
+        nrays = 1000000, traceStart = 0, autoStart = False, eRange = eRange,imageDist = f2, harmonic = False):
     
     #
     # initialize shadow3 source (oe0) and beam
     #
 
-    imageDist = 1811.6
+    file333 = b'C:/Users/kenneth1a/Documents/mirrors/bragg333.dat'
+    file111 = b'C:/Users/kenneth1a/Documents/mirrors/Si5_55.111'
+
+    if harmonic:
+        braggFile = file333
+    else:
+        braggFile = file111
+
     beam = Shadow.Beam()
     oe0 = Shadow.Source()
     oe1 = Shadow.OE()
@@ -62,8 +69,8 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     oe3 = Shadow.OE()
     beamFile = 'starXRD'
     config = {'energy':energy,  'monoEnergy':monoEnergy,'nrays':nrays, 'focalEnergy': focalEnergy, 'meridionalDist': meridionalDist,
-              'f2':f2,'eRange':eRange}
-    startDct = {'energy':0,'nrays':0,'monoEnergy':1,'focalEnergy':2, 'meridionalDist': 2, 'eRange':0}
+              'f2':f2,'eRange':eRange, 'harmonic':harmonic}
+    startDct = {'energy':0,'nrays':0,'monoEnergy':1,'focalEnergy':2, 'meridionalDist': 2, 'eRange':0,'harmonic':1}
     if os.path.exists(configFile):
         oldConfig = readConfig(configFile)
         autoTraceStart = whereStart(config,oldConfig,startDct)
@@ -97,7 +104,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     srfunc.wiggler_cdf(traj,
     enerMin        = energy-eRange/2,
     enerMax        = energy+eRange/2,
-    enerPoints     = 1001,
+    enerPoints     = 2001,
     outFile        =b'C:\\Users\\kenneth1a\\Documents\\mirrors\\xshwig.sha',
     elliptical     =False)
 
@@ -124,7 +131,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     oe0.IDO_X_S = 0
     oe0.IDO_Y_S = 0
     oe0.IDO_Z_S = 0
-    oe0.ISTAR1 = 5676561
+    oe0.ISTAR1 = 5676561 #seed value, takes any odd number from 1000 to 1000000
     oe0.NCOL = 0
     oe0.NPOINT = nrays
     oe0.NTOTALPOINT = 0
@@ -145,7 +152,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     #first crystal
     oe1.DUMMY = 1.0
     oe1.FHIT_C = 1
-    oe1.FILE_REFL = b'C:/Users/kenneth1a/Documents/mirrors/Si5_55.111'
+    oe1.FILE_REFL = braggFile
     oe1.FWRITE = 1
     oe1.F_CENTRAL = 1
     oe1.F_CRYSTAL = 1
@@ -163,7 +170,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     oe2.ALPHA = 180.0
     oe2.DUMMY = 1.0
     oe2.FHIT_C = 1
-    oe2.FILE_REFL = b'C:/Users/kenneth1a/Documents/mirrors/Si5_55.111'
+    oe2.FILE_REFL = braggFile
     oe2.FMIRR = 3
     oe2.FWRITE = 1
     oe2.F_CENTRAL = 1
@@ -242,13 +249,14 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
 
 if __name__ == '__main__':
     result, eResult, beam = run(energy = energy, monoEnergy=monoEnergy,nrays = nrays, focalEnergy=focalEnergy, 
-                                meridionalDist = meridionalDist, autoStart=autoStart)
+                                meridionalDist = meridionalDist, autoStart=autoStart, harmonic=harmonic)
     print('intensity:',result['intensity'])
     print('fwhm_h', result['fwhm_h']*10, 'mm')
     print('fwhm_v', result['fwhm_v']*10, 'mm')
     print('energy fwhm', eResult['fwhm'], 'eV')
     Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,nolost=1,title="Real space")
-    Shadow.ShadowTools.histo1(beam,11,nbins = 201, nolost=  1, ref = 23)
+    Shadow.ShadowTools.histo1(beam,11,nbins = 2001, nolost=  1, ref = 23)
+    
     #plt.stairs(eResult['histogram'],eResult['bins'])
     #plt.xlabel('energy (eV)')
     #plt.ylabel('intensity')
