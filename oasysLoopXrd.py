@@ -6,6 +6,7 @@ from bm31_oasys import fluxEnergy, fluxDensity
 
 energies =  [47500]*6 #np.linspace(47000,51000,5)
 meridionalFs = [1000, 2000,5000,10000,100000, 1000000]
+harmonics = [False]*6
 nrays = 500000
 monoEnergies = energies
 focalEnergy = 47000
@@ -18,9 +19,9 @@ eRange = 200
 plot = True
 
 
-for n,(e,m,me) in enumerate(zip(energies, meridionalFs,monoEnergies)):
+for n,(e,m,me,h) in enumerate(zip(energies, meridionalFs,monoEnergies,harmonics)):
     results[n], eResults[n], beams[n] = bm31_oasys_xrd.run(energy=e, monoEnergy=me,nrays= nrays, focalEnergy=focalEnergy, eRange=eRange,
-                                                           meridionalDist = m,  autoStart=True, imageDist=bm31_oasys_xrd.f2 + 20)
+                                                           meridionalDist = m,  autoStart=True, imageDist=bm31_oasys_xrd.f2 + 20, harmonic = h)
 
 for n,(e,m,me) in enumerate(zip(energies, meridionalFs,monoEnergies)):
 

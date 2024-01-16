@@ -14,11 +14,11 @@ beams = {}
 nrays = 1000000
 eRange = 100
 plot = True
-harmonic = False
+harmonics = [False]*6
 
 
-for n, (energy, mEnergy, colAngle, torroidalMirrorAngle, secondCrystalRot) in enumerate(zip(energies, monoEnergies, colMirrorAngles,
-                                                                                            torroidalMirrorAngles,secondCrystalRots)):
+for n, (energy, mEnergy, colAngle, torroidalMirrorAngle, secondCrystalRot,harmonic) in enumerate(zip(energies, monoEnergies, colMirrorAngles,
+                                                                                            torroidalMirrorAngles,secondCrystalRots,harmonics)):
     results[n],eResults[n], beams[n] = bm31_oasys.run(energy=energy, monoEnergy=mEnergy, colMirrorRad=colAngle, eRange=eRange,
                                                       torrAnglemRad=torroidalMirrorAngle, secondCrystalRot=secondCrystalRot,  
                                                       nrays = nrays, writeBeam=True, autoStart=True, harmonic = harmonic)
