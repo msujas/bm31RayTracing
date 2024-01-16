@@ -38,7 +38,6 @@ for n in results:
     string = (f"source flux density: {fluxInitial:.6e}\n"
     f"source total photons/s: {NphotonsI:.6e}\n"
     f"intensity: {results[n]['intensity']:.1f}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
-    f"final flux: {fluxEnd:.6e}\n"
     f"final photons/s {NphotonsF:.6e}\n"
     f"fwhm_h: {results[n]['fwhm_h']*10:.6f} mm\n"
     f"fwhm_v: {results[n]['fwhm_v']*10:.6f} mm\n"

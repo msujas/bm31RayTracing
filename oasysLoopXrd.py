@@ -43,7 +43,6 @@ for n,(e,m,me) in enumerate(zip(energies, meridionalFs,monoEnergies)):
     f"mono energy: {me} eV\n"
     f"focal distance: {f2:.1f} cm\n"
     f"intensity: {intensity:.1f}\n"
-    f"final flux: {fluxEnd:.6e}\n"
     f"final photons/s: {NphotonsF:.6e}\n"
     f"fwhm_h: {fwhmH} mm\n"
     f"fwhm_v: {fwhmV} mm\n"

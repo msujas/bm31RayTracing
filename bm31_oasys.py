@@ -8,22 +8,26 @@ from srxraylib.sources import srfunc
 import os
 import matplotlib.pyplot as plt
 
-energy = 9000
-monoEnergy = 9000
-harmonic = False
+
+direc = r'C:\Users\kenneth1a\Documents\mirrors'
+energy = 9000*3
+monoEnergy = 9000*3
+harmonic = True
 torroidalMirrorAngle = 3 #mrad from surface
-secondCrystalRot = 0.001
+secondCrystalRot = 0.00 #0.001 for detuning 60%
 firstMirrorAngle = 2
 dspacing = 3.13379
 nrays = 1000000
 fname = 'output.dat'
-eRange = 100
+eRange = 50
 
-traceStart = 0
 autoStart = True
+traceStart = 0
+
+
 writeBeam = True
 
-fluxFile = r'C:\Users\kenneth1a\Documents\mirrors/spectrum5000_150000.dat'
+fluxFile = rf'{direc}/spectrum5000_150000.dat'
 fluxArray = np.loadtxt(fluxFile,comments='#', unpack=True)
 fluxEnergy = fluxArray[0]
 fluxDensity = fluxArray[1]
@@ -91,8 +95,8 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
 
     beam = Shadow.Beam()
 
-    file111 = b'C:/Users/kenneth1a/Documents/mirrors/Si5_55.111'
-    file333 = b'C:/Users/kenneth1a/Documents/mirrors/bragg333.dat'
+    file111 = bytes(f'{direc}/Si5_55.111',encoding = 'utf-8')
+    file333 = bytes(f'{direc}/bragg333.dat',encoding = 'utf-8')
     if harmonic:
         dcmfile = file333
     else:
@@ -125,7 +129,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     enerMin        = energy-eRange/2,
     enerMax        = energy+eRange/2,
     enerPoints     = 1001,
-    outFile        =b'C:\\Users\\kenneth1a\\Documents\\mirrors\\xshwig.sha',
+    outFile        =bytes(f'{direc}/xshwig.sha',encoding = 'utf-8'),
     elliptical     =False)
 
     calculate_spectrum = False
@@ -152,8 +156,8 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     oe0.EPSI_X = 2.16e-08
     oe0.EPSI_Z = 5e-10
     oe0.FDISTR = 0
-    oe0.FILE_BOUND = b'C:\\Users\\kenneth1a\\Documents\\mirrors\\myslit.dat'
-    oe0.FILE_TRAJ = b'C:\\Users\\kenneth1a\\Documents\\mirrors\\xshwig.sha'
+    oe0.FILE_BOUND = bytes(f'{direc}/myslit.dat',encoding = 'utf-8')
+    oe0.FILE_TRAJ = bytes(f'{direc}/xshwig.sha',encoding = 'utf-8')
     oe0.FSOUR = 0
     oe0.FSOURCE_DEPTH = 0
     oe0.F_BOUND_SOUR = 2
@@ -204,8 +208,8 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     oe2.DUMMY = 1.0
     oe2.FCYL = 1
     oe2.FHIT_C = 1
-    oe2.FILE_REFL = b'C:/Users/kenneth1a/Documents/mirrors/Rhreflec.dat'
-    oe2.FILE_RIP = b'C:/Users/kenneth1a/Documents/mirrors/Colmirror1m_1u.dat'
+    oe2.FILE_REFL = bytes(f'{direc}/Rhreflec.dat',encoding = 'utf-8')
+    oe2.FILE_RIP = bytes(f'{direc}/Colmirror1m_1u.dat', encoding = 'utf-8')
     oe2.FMIRR = 1
     oe2.F_DEFAULT = 0
     oe2.F_G_S = 2
@@ -269,8 +273,8 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     #oe5 - torroidal mirror
     oe5.DUMMY = 1.0
     oe5.FHIT_C = 1
-    oe5.FILE_REFL = b'C:/Users/kenneth1a/Documents/mirrors/Rhreflec.dat'
-    oe5.FILE_RIP = b'C:/Users/kenneth1a/Documents/mirrors/Colmirror1m_1u.dat'
+    oe5.FILE_REFL = bytes(f'{direc}/Rhreflec.dat',encoding = 'utf-8')
+    oe5.FILE_RIP = bytes(f'{direc}/Colmirror1m_1u.dat',encoding = 'utf-8')
     oe5.FMIRR = 3
     oe5.FWRITE = 2
     oe5.F_ANGLE = 1
@@ -380,7 +384,6 @@ if __name__ == '__main__':
     string = (f"source flux density: {fluxInitial:.6e}\n"
     f"source total photons/s: {NphotonsI:.6e}\n"
     f"intensity: {result['intensity']:.1f}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
-    f"final flux: {fluxEnd:.6e}\n"
     f"final photons/s {NphotonsF:.6e}\n"
     f"fwhm_h: {result['fwhm_h']*10:.6f} mm\n"
     f"fwhm_v: {result['fwhm_v']*10:.6f} mm\n"

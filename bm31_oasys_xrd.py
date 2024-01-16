@@ -6,7 +6,7 @@ import numpy
 np = numpy
 from srxraylib.sources import srfunc
 import matplotlib.pyplot as plt
-from bm31_oasys import dctToFile, readConfig, whereStart, fluxEnergy, fluxDensity
+from bm31_oasys import dctToFile, readConfig, whereStart, fluxEnergy, fluxDensity, direc
 import os
 
 energy = 49000*3
@@ -16,7 +16,6 @@ meridionalDist = 10000
 nrays = 500000
 eRange = 200
 harmonic = True
-
 autoStart = True
 
 
@@ -54,8 +53,8 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     # initialize shadow3 source (oe0) and beam
     #
 
-    file333 = b'C:/Users/kenneth1a/Documents/mirrors/bragg333.dat'
-    file111 = b'C:/Users/kenneth1a/Documents/mirrors/Si5_55.111'
+    file333 = bytes(f'{direc}/bragg333.dat',encoding = 'utf-8')
+    file111 = bytes(f'{direc}/Si5_55.111',encoding = 'utf-8')
 
     if harmonic:
         braggFile = file333
@@ -105,7 +104,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     enerMin        = energy-eRange/2,
     enerMax        = energy+eRange/2,
     enerPoints     = 2001,
-    outFile        =b'C:\\Users\\kenneth1a\\Documents\\mirrors\\xshwig.sha',
+    outFile        =bytes(f'{direc}/xshwig.sha',encoding = 'utf-8'),
     elliptical     =False)
 
     #oe0 - wiggler source
@@ -116,8 +115,8 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     oe0.EPSI_X = 2.16e-08
     oe0.EPSI_Z = 5e-10
     oe0.FDISTR = 0
-    oe0.FILE_BOUND = b'C:\\Users\\kenneth1a\\Documents\\mirrors\\myslit.dat'
-    oe0.FILE_TRAJ = b'C:\\Users\\kenneth1a\\Documents\\mirrors\\xshwig.sha'
+    oe0.FILE_BOUND = bytes(f'{direc}/myslit.dat',encoding = 'utf-8')
+    oe0.FILE_TRAJ = bytes(f'{direc}/xshwig.sha', encoding = 'utf-8')
     oe0.FSOUR = 0
     oe0.FSOURCE_DEPTH = 0
     oe0.F_BOUND_SOUR = 2
@@ -269,7 +268,6 @@ if __name__ == '__main__':
     f"mono energy: {monoEnergy} eV\n"
     f"focal distance: {f2:.1f} cm\n"
     f"intensity: {intensity:.1f}\n"
-    f"final flux: {fluxEnd:.6e}\n"
     f"final photons/s: {NphotonsF:.6e}\n"
     f"fwhm_h: {fwhmH} mm\n"
     f"fwhm_v: {fwhmV} mm\n"
