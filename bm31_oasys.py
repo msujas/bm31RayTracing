@@ -114,7 +114,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     #generating source trajectory files
     traj, pars = srfunc.wiggler_trajectory(
     b_from            =1,
-    inData            ="C:/Users/kenneth1a/Documents/mirrors/SW_2PA.txt",
+    inData            =f"{direc}/SW_2PA.txt",
     nPer              =1,
     nTrajPoints       =501,
     ener_gev          =6.0,

@@ -89,7 +89,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     #generating source trajectory files
     traj, pars = srfunc.wiggler_trajectory(
     b_from            =1,
-    inData            ="C:/Users/kenneth1a/Documents/mirrors/SW_2PA.txt",
+    inData            =f"{direc}/SW_2PA.txt",
     nPer              =1,
     nTrajPoints       =501,
     ener_gev          =6.0,

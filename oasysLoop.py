@@ -3,18 +3,18 @@ import Shadow
 import numpy as np
 from bm31_oasys import fluxEnergy, fluxDensity
 
-energies = [9000,9000,15000]
-colMirrorAngles = [3.002,3.002,3.002]
-torroidalMirrorAngles = [3.002,3.002,3.002] #mrad from surface
-secondCrystalRots = [0,0.0005,0]
-monoEnergies = [9000,9000,15000]
+energies = [9000,9000, 9000,27000,27000, 27000]
+colMirrorAngles = [3.002,3.002,2,3.002, 3.002,2]
+torroidalMirrorAngles = [3.002,3.002,3.002,3.002, 3.002, 3.002] #mrad from surface
+secondCrystalRots = [0,0.001,0,0,0.001,0]
+monoEnergies = energies
 results = {}
 eResults = {}
 beams = {}
 nrays = 1000000
-eRange = 100
+eRange = 50
 plot = True
-harmonics = [False]*6
+harmonics = [False, False, False, True, True, True]
 
 
 for n, (energy, mEnergy, colAngle, torroidalMirrorAngle, secondCrystalRot,harmonic) in enumerate(zip(energies, monoEnergies, colMirrorAngles,
@@ -31,6 +31,7 @@ for n in results:
     energyIndex = np.abs(fluxEnergy-energy).argmin()
     fluxInitial = fluxDensity[energyIndex]
     print()
+    print(energy)
     fluxEnd = intRatio*fluxInitial #this is approximating equal flux density in the energy range
     NphotonsI = fluxInitial*eRange/(energy/1000) #approximate
 
