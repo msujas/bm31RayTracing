@@ -388,7 +388,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
 
 if __name__ == '__main__':
     result, eResult, beam, createdRays = run(energy = energy, eRange = eRange, colMirrorRad=firstMirrorAngle, torrAnglemRad=torroidalMirrorAngle, 
-                                secondCrystalRot =  secondCrystalRot, writeBeam=writeBeam, fname = fname,nrays=nrays, 
+                                secondCrystalRot =  secondCrystalRot, writeBeam=writeBeam, nrays=nrays, 
                                 traceStart=traceStart, autoStart=autoStart, harmonic=harmonic)
     #print(result.keys())
     
