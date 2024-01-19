@@ -19,7 +19,7 @@ dspacing = 3.13379
 nrays = 1000000
 eRange = 50
 
-autoStart = True
+autoStart = True #set to False with first use
 traceStart = 0
 
 
@@ -30,11 +30,6 @@ fluxArray = np.loadtxt(fluxFile,comments='#', unpack=True)
 fluxEnergy = fluxArray[0]
 fluxDensity = fluxArray[1]
 powerDensity = fluxArray[2]
-
-
-configFile = 'config/mirrorsConfig.dat'
-createdRaysLog = 'config/createdRays.log'
-fname = 'output.dat'
 
 def readCreatedRays(createdRaysLog):
     f = open(createdRaysLog,'r')
@@ -87,13 +82,15 @@ def whereStart(config,oldConfig, startDct):
     return startDct[item]+1
 
 
-def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, writeBeam=True, fname = None,
+def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, writeBeam=True, 
         nrays = 100000, traceStart = 0, autoStart = False, harmonic = False):
     torrAngleDeg = mradSurface_to_degNorm(torrAnglemRad)
     colMirrorDeg = mradSurface_to_degNorm(colMirrorRad)
-    #
-    # initialize shadow3 source (oe0) and beam
-    #
+
+    configFile = 'config/mirrorsConfig.dat'
+    createdRaysLog = 'config/createdRays.log'
+    fname = 'output.dat'
+
     config = {'energy':energy,'eRange':eRange, 'colMirrorRad': colMirrorRad, 'torrAnglemRad':torrAnglemRad, 'secondCrystalRot':secondCrystalRot,
               'nrays':nrays, 'harmonic':harmonic}
     startDct = {'energy':0, 'eRange': 0, 'colMirrorRad':2, 'secondCrystalRot':4,'torrAnglemRad':5,'nrays':0, 'harmonic': 3}
@@ -102,7 +99,9 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
         autoTraceStart = whereStart(config,oldConfig,startDct)
         if autoStart:
             traceStart = autoTraceStart
-    
+    #
+    # initialize shadow3 source (oe0) and beam
+    #
     print(f'beginning at {traceStart}')
     oe0 = Shadow.Source()
     oe1 = Shadow.OE()

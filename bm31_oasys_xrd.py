@@ -9,13 +9,13 @@ import matplotlib.pyplot as plt
 from bm31_oasys import dctToFile, readConfig, whereStart, fluxEnergy, fluxDensity, direc, readCreatedRays, writeCreatedRays, initialPhotons, finalPhotons
 import os
 
-energy = 47000*3
+energy = 47000
 focalEnergy = 47000
 meridionalDist = 10000
 nrays = 500000
 eRange = 200
-harmonic = True
-autoStart = True
+harmonic = False
+autoStart = True #set to False for first use
 
 
 f1 = 3032.8
@@ -45,16 +45,11 @@ def meridionalRadius(f1,f2,focalEnergy):
     theta = energyToTheta(focalEnergy)*np.pi/180
     return ((f1+f2)**2 - 4*f1*f2*np.sin(theta)**2)**0.5/(np.sin(2*theta))
 
-
-configFile = 'config/xrdConfig.dat'
-createdRaysLog = 'config/createdRaysXRD.log'
-
 def run(energy = 49000,  focalEnergy = 49000, meridionalDist = 1000000, writeBeam = True, 
         nrays = 1000000, traceStart = 0, autoStart = False, eRange = eRange,imageDist = f2, harmonic = False):
     
-    #
-    # initialize shadow3 source (oe0) and beam
-    #
+    configFile = 'config/xrdConfig.dat'
+    createdRaysLog = 'config/createdRaysXRD.log'
 
     file333 = bytes(f'{direc}/bragg333.dat',encoding = 'utf-8')
     file111 = bytes(f'{direc}/Si5_55.111',encoding = 'utf-8')
@@ -63,7 +58,9 @@ def run(energy = 49000,  focalEnergy = 49000, meridionalDist = 1000000, writeBea
         braggFile = file333
     else:
         braggFile = file111
-
+    #
+    # initialize shadow3 source (oe0) and beam
+    #
     beam = Shadow.Beam()
     oe0 = Shadow.Source()
     oe1 = Shadow.OE()
