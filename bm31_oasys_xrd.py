@@ -6,11 +6,10 @@ import numpy
 np = numpy
 from srxraylib.sources import srfunc
 import matplotlib.pyplot as plt
-from bm31_oasys import dctToFile, readConfig, whereStart, fluxEnergy, fluxDensity, direc
+from bm31_oasys import dctToFile, readConfig, whereStart, fluxEnergy, fluxDensity, direc, readCreatedRays, writeCreatedRays, initialPhotons, finalPhotons
 import os
 
-energy = 49000*3
-monoEnergy = 49000*3
+energy = 47000*3
 focalEnergy = 47000
 meridionalDist = 10000
 nrays = 500000
@@ -35,18 +34,22 @@ def saggitalRadius(energy,f1=f1,f2=f2):
     return (2*f1*f2*np.sin(theta)/(f1+f2))
 
 sr = saggitalRadius(focalEnergy,f1,f2)
-def srTof2(energy,sr=sr,f1=f1):
+
+def srTof2(energy, harmonic,sr=sr,f1=f1):
+    if harmonic:
+        energy /=3
     theta = energyToTheta(energy)*np.pi/180
     return f1*sr/(2*f1*np.sin(theta) - sr)
 
-def meridionalRadius(f1,f2,energy):
-    theta = energyToTheta(energy)*np.pi/180
+def meridionalRadius(f1,f2,focalEnergy):
+    theta = energyToTheta(focalEnergy)*np.pi/180
     return ((f1+f2)**2 - 4*f1*f2*np.sin(theta)**2)**0.5/(np.sin(2*theta))
 
 
-configFile = 'xrdConfig.dat'
+configFile = 'config/xrdConfig.dat'
+createdRaysLog = 'config/createdRaysXRD.log'
 
-def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist = 1000000, writeBeam = True, 
+def run(energy = 49000,  focalEnergy = 49000, meridionalDist = 1000000, writeBeam = True, 
         nrays = 1000000, traceStart = 0, autoStart = False, eRange = eRange,imageDist = f2, harmonic = False):
     
     #
@@ -66,10 +69,10 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     oe1 = Shadow.OE()
     oe2 = Shadow.OE()
     oe3 = Shadow.OE()
-    beamFile = 'starXRD'
-    config = {'energy':energy,  'monoEnergy':monoEnergy,'nrays':nrays, 'focalEnergy': focalEnergy, 'meridionalDist': meridionalDist,
+    beamFile = 'config/starXRD'
+    config = {'energy':energy,  'nrays':nrays, 'focalEnergy': focalEnergy, 'meridionalDist': meridionalDist,
               'f2':f2,'eRange':eRange, 'harmonic':harmonic}
-    startDct = {'energy':0,'nrays':0,'monoEnergy':1,'focalEnergy':2, 'meridionalDist': 2, 'eRange':0,'harmonic':1}
+    startDct = {'energy':0,'nrays':0,'focalEnergy':2, 'meridionalDist': 2, 'eRange':0,'harmonic':1}
     if os.path.exists(configFile):
         oldConfig = readConfig(configFile)
         autoTraceStart = whereStart(config,oldConfig,startDct)
@@ -156,7 +159,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     oe1.F_CENTRAL = 1
     oe1.F_CRYSTAL = 1
     oe1.F_MOVE = 1
-    oe1.PHOT_CENT = monoEnergy
+    oe1.PHOT_CENT = energy
     oe1.RLEN1 = 2.5
     oe1.RLEN2 = 2.5
     oe1.RWIDX1 = 3.5
@@ -177,7 +180,7 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     oe2.F_EXT = 1
     oe2.F_MOVE = 1
     oe2.F_TORUS = 2
-    oe2.PHOT_CENT = monoEnergy
+    oe2.PHOT_CENT = energy
     oe2.RLEN1 = 2.5
     oe2.RLEN2 = 2.5
     oe2.RWIDX1 = 3.5
@@ -204,6 +207,8 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
 
     if traceStart < 1:
         beam.genSource(oe0)
+        createdRays = oe0.NTOTALPOINT
+        writeCreatedRays(createdRays, createdRaysLog)
 
     if writeBeam and traceStart < 1:
         beam.write(f"{beamFile}.00")
@@ -244,10 +249,11 @@ def run(energy = 49000,  monoEnergy = 49000, focalEnergy = 49000, meridionalDist
     #plt.imshow(beam.rays, aspect = 'auto')
     #plt.show()
     dctToFile(config,configFile)
-    return result, eResult,beam
+    createdRays = readCreatedRays(createdRaysLog)
+    return result, eResult,beam, createdRays
 
 if __name__ == '__main__':
-    result, eResult, beam = run(energy = energy, monoEnergy=monoEnergy,nrays = nrays, focalEnergy=focalEnergy, 
+    result, eResult, beam, createdRays = run(energy = energy, nrays = nrays, focalEnergy=focalEnergy, 
                                 meridionalDist = meridionalDist, autoStart=autoStart, harmonic=harmonic)
     intensity = result['intensity']
     fwhmH = result['fwhm_h']*10 #mm
@@ -256,16 +262,17 @@ if __name__ == '__main__':
     intRatio = intensity/nrays
     energyIndex = np.abs(fluxEnergy-energy).argmin()
     fluxInitial = fluxDensity[energyIndex]
-    NphotonsI = fluxInitial*eRange/(energy/1000) #approximate
-    NphotonsF = NphotonsI*intRatio #approximate
+    NphotonsI = initialPhotons(fluxInitial,eRange,energy) #approximate
+    NphotonsF = finalPhotons(NphotonsI,createdRays,intensity) #approximate
     print()
     fluxEnd = intRatio*fluxInitial #this is approximating equal flux density in the energy range
-    f2 = srTof2(monoEnergy,sr)
+    f2 = srTof2(energy, harmonic,sr)
     string = (f"{energy} eV\n"
-    f"source flux density: {fluxInitial:.6e}\n"
+    f"source flux density: {fluxInitial:.6e}\n photons/(s 0.1%bw)"
     f"source total photons/s: {NphotonsI:.6e}\n"
+    f"created/accepted rays = {createdRays/nrays:.6f}\n"
     f"meridional fdist: {meridionalDist} cm\n"
-    f"mono energy: {monoEnergy} eV\n"
+    f"mono energy: {energy} eV\n"
     f"focal distance: {f2:.1f} cm\n"
     f"intensity: {intensity:.1f}\n"
     f"final photons/s: {NphotonsF:.6e}\n"

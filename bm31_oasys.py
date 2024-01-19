@@ -10,15 +10,13 @@ import matplotlib.pyplot as plt
 
 
 direc = r'C:\Users\kenneth1a\Documents\mirrors'
-energy = 9000*3
-monoEnergy = 9000*3
-harmonic = True
+energy = 9000
+harmonic = False
 torroidalMirrorAngle = 3 #mrad from surface
 secondCrystalRot = 0.00 #0.001 for detuning 60%
 firstMirrorAngle = 2
 dspacing = 3.13379
 nrays = 1000000
-fname = 'output.dat'
 eRange = 50
 
 autoStart = True
@@ -32,6 +30,22 @@ fluxArray = np.loadtxt(fluxFile,comments='#', unpack=True)
 fluxEnergy = fluxArray[0]
 fluxDensity = fluxArray[1]
 powerDensity = fluxArray[2]
+
+
+configFile = 'config/mirrorsConfig.dat'
+createdRaysLog = 'config/createdRays.log'
+fname = 'output.dat'
+
+def readCreatedRays(createdRaysLog):
+    f = open(createdRaysLog,'r')
+    createdRays = int(f.read())
+    f.close()
+    return createdRays
+
+def writeCreatedRays(createdRays, createdRaysLog):
+    f = open(createdRaysLog,'w')
+    f.write(str(createdRays))
+    f.close()
 
 def mradSurface_to_degNorm(mrad):
     return 90-mrad*180/(numpy.pi*1000)
@@ -59,7 +73,11 @@ def readConfig(file):
         dct[lsplit[0]] = lsplit[1]
     return dct
 
-configFile = 'mirrorsConfig.dat'
+def initialPhotons(flux, eRange, energy):
+    return flux*eRange/(energy/1000)
+
+def finalPhotons(initialPhotons, totalnrays, intensity):
+    return initialPhotons*intensity/totalnrays
 
 def whereStart(config,oldConfig, startDct):
     startDctSorted = dict(sorted(startDct.items(), key = lambda x: x[1]))
@@ -69,7 +87,7 @@ def whereStart(config,oldConfig, startDct):
     return startDct[item]+1
 
 
-def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, monoEnergy = 9000, writeBeam=0, fname = None,
+def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, writeBeam=True, fname = None,
         nrays = 100000, traceStart = 0, autoStart = False, harmonic = False):
     torrAngleDeg = mradSurface_to_degNorm(torrAnglemRad)
     colMirrorDeg = mradSurface_to_degNorm(colMirrorRad)
@@ -77,8 +95,8 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     # initialize shadow3 source (oe0) and beam
     #
     config = {'energy':energy,'eRange':eRange, 'colMirrorRad': colMirrorRad, 'torrAnglemRad':torrAnglemRad, 'secondCrystalRot':secondCrystalRot,
-              'monoEnergy':monoEnergy,'nrays':nrays, 'harmonic':harmonic}
-    startDct = {'energy':0, 'eRange': 0, 'colMirrorRad':2, 'monoEnergy':3,'secondCrystalRot':4,'torrAnglemRad':5,'nrays':0, 'harmonic': 3}
+              'nrays':nrays, 'harmonic':harmonic}
+    startDct = {'energy':0, 'eRange': 0, 'colMirrorRad':2, 'secondCrystalRot':4,'torrAnglemRad':5,'nrays':0, 'harmonic': 3}
     if os.path.exists(configFile):
         oldConfig = readConfig(configFile)
         autoTraceStart = whereStart(config,oldConfig,startDct)
@@ -101,7 +119,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
         dcmfile = file333
     else:
         dcmfile = file111
-    beamFile = 'beam'
+    beamFile = 'config/beam'
     if traceStart > 0:
         beam.load(f'{beamFile}.{traceStart-1:02d}')
 
@@ -156,8 +174,8 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     oe0.EPSI_X = 2.16e-08
     oe0.EPSI_Z = 5e-10
     oe0.FDISTR = 0
-    oe0.FILE_BOUND = bytes(f'{direc}/myslit.dat',encoding = 'utf-8')
-    oe0.FILE_TRAJ = bytes(f'{direc}/xshwig.sha',encoding = 'utf-8')
+    oe0.FILE_BOUND = bytes(f'{direc}\\myslit.dat',encoding = 'utf-8')
+    oe0.FILE_TRAJ = bytes(f'{direc}\\xshwig.sha',encoding = 'utf-8')
     oe0.FSOUR = 0
     oe0.FSOURCE_DEPTH = 0
     oe0.F_BOUND_SOUR = 2
@@ -236,7 +254,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     oe3.F_CENTRAL = 1
     oe3.F_CRYSTAL = 1
     oe3.F_MOVE = 1
-    oe3.PHOT_CENT = monoEnergy
+    oe3.PHOT_CENT = energy
     oe3.RLEN1 = 2.5
     oe3.RLEN2 = 2.5
     oe3.RWIDX1 = 3.5
@@ -257,7 +275,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     oe4.F_CENTRAL = 1
     oe4.F_CRYSTAL = 1
     oe4.F_MOVE = 1
-    oe4.PHOT_CENT = monoEnergy
+    oe4.PHOT_CENT = energy
     oe4.FSHAPE = 1
     oe4.RLEN1 = 2.5
     oe4.RLEN2 = 2.5
@@ -298,7 +316,8 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     #Run SHADOW to create the source
     if traceStart < 1:
         beam.genSource(oe0)
-    
+        createdRays = oe0.NTOTALPOINT
+        writeCreatedRays(createdRays, createdRaysLog)
     if writeBeam and traceStart < 1:
         print(f'writing {beamFile}.00')
         beam.write(f"{beamFile}.00")
@@ -364,25 +383,27 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     #plt.imshow(beam.rays, aspect = 'auto')
     #plt.show()
     dctToFile(config,configFile)
-    return result, energyResult,beam
+    createdRays = readCreatedRays(createdRaysLog)
+    return result, energyResult,beam, createdRays
+
 
 if __name__ == '__main__':
-    result, eResult, beam = run(energy = energy, eRange = eRange, colMirrorRad=firstMirrorAngle, torrAnglemRad=torroidalMirrorAngle, 
-                                secondCrystalRot =  secondCrystalRot, writeBeam=writeBeam, monoEnergy=monoEnergy, 
-                                fname = fname,nrays=nrays, traceStart=traceStart, autoStart=autoStart, harmonic=harmonic)
-    #print(result)
+    result, eResult, beam, createdRays = run(energy = energy, eRange = eRange, colMirrorRad=firstMirrorAngle, torrAnglemRad=torroidalMirrorAngle, 
+                                secondCrystalRot =  secondCrystalRot, writeBeam=writeBeam, fname = fname,nrays=nrays, 
+                                traceStart=traceStart, autoStart=autoStart, harmonic=harmonic)
+    #print(result.keys())
+    
     intensity = result['intensity']
-    intRatio = intensity/nrays
     energyIndex = np.abs(fluxEnergy-energy).argmin()
     fluxInitial = fluxDensity[energyIndex]
     
     print()
-    fluxEnd = intRatio*fluxInitial #this is approximating equal flux density in the energy range
-    NphotonsI = fluxInitial*eRange/(energy/1000) #approximate
-    NphotonsF = NphotonsI*intRatio #approximate
+    NphotonsI = initialPhotons(fluxInitial,eRange,energy) #approximate
+    NphotonsF = finalPhotons(NphotonsI,createdRays,intensity) #approximate
     eFWHM = eResult['fwhm']
-    string = (f"source flux density: {fluxInitial:.6e}\n"
+    string = (f"source flux density: {fluxInitial:.6e} photons/(s 0.1%bw)\n"
     f"source total photons/s: {NphotonsI:.6e}\n"
+    f"created/accepted: {createdRays/nrays:.6f}\n"
     f"intensity: {result['intensity']:.1f}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
     f"final photons/s {NphotonsF:.6e}\n"
     f"fwhm_h: {result['fwhm_h']*10:.6f} mm\n"

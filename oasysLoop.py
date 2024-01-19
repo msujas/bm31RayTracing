@@ -1,25 +1,25 @@
 import bm31_oasys
 import Shadow
 import numpy as np
-from bm31_oasys import fluxEnergy, fluxDensity
+from bm31_oasys import fluxEnergy, fluxDensity, initialPhotons, finalPhotons
 
 energies = [9000,9000, 9000,27000,27000, 27000]
 colMirrorAngles = [3.002,3.002,2,3.002, 3.002,2]
 torroidalMirrorAngles = [3.002,3.002,3.002,3.002, 3.002, 3.002] #mrad from surface
 secondCrystalRots = [0,0.001,0,0,0.001,0]
-monoEnergies = energies
 results = {}
 eResults = {}
 beams = {}
+createdRays = {}
 nrays = 1000000
 eRange = 50
 plot = True
 harmonics = [False, False, False, True, True, True]
 
 
-for n, (energy, mEnergy, colAngle, torroidalMirrorAngle, secondCrystalRot,harmonic) in enumerate(zip(energies, monoEnergies, colMirrorAngles,
+for n, (energy, colAngle, torroidalMirrorAngle, secondCrystalRot,harmonic) in enumerate(zip(energies, colMirrorAngles,
                                                                                             torroidalMirrorAngles,secondCrystalRots,harmonics)):
-    results[n],eResults[n], beams[n] = bm31_oasys.run(energy=energy, monoEnergy=mEnergy, colMirrorRad=colAngle, eRange=eRange,
+    results[n],eResults[n], beams[n], createdRays[n] = bm31_oasys.run(energy=energy, colMirrorRad=colAngle, eRange=eRange,
                                                       torrAnglemRad=torroidalMirrorAngle, secondCrystalRot=secondCrystalRot,  
                                                       nrays = nrays, writeBeam=True, autoStart=True, harmonic = harmonic)
 
@@ -33,10 +33,10 @@ for n in results:
     print()
     print(energy)
     fluxEnd = intRatio*fluxInitial #this is approximating equal flux density in the energy range
-    NphotonsI = fluxInitial*eRange/(energy/1000) #approximate
+    NphotonsI = initialPhotons(fluxInitial,eRange,energy) #approximate
 
-    NphotonsF = NphotonsI*intRatio #approximate
-    string = (f"source flux density: {fluxInitial:.6e}\n"
+    NphotonsF = finalPhotons(NphotonsI, createdRays[n], intensity)  #approximate
+    string = (f"source flux density: {fluxInitial:.6e} photons/(s 0.1%bw)\n"
     f"source total photons/s: {NphotonsI:.6e}\n"
     f"intensity: {results[n]['intensity']:.1f}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
     f"final photons/s {NphotonsF:.6e}\n"

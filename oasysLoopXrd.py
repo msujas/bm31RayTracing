@@ -1,47 +1,48 @@
 import bm31_oasys_xrd
 import Shadow
 import numpy as np
-from bm31_oasys import fluxEnergy, fluxDensity
+from bm31_oasys import fluxEnergy, fluxDensity, initialPhotons, finalPhotons
 
 
 energies =  [47500]*6 #np.linspace(47000,51000,5)
 meridionalFs = [1000, 2000,5000,10000,100000, 1000000]
 harmonics = [False]*6
 nrays = 500000
-monoEnergies = energies
 focalEnergy = 47000
 results=  {}
 eResults = {}
 beams = {}
+createdRays = {}
 sr = bm31_oasys_xrd.saggitalRadius(focalEnergy)
 eRange = 200
 
 plot = True
 
 
-for n,(e,m,me,h) in enumerate(zip(energies, meridionalFs,monoEnergies,harmonics)):
-    results[n], eResults[n], beams[n] = bm31_oasys_xrd.run(energy=e, monoEnergy=me,nrays= nrays, focalEnergy=focalEnergy, eRange=eRange,
+for n,(e,m,h) in enumerate(zip(energies, meridionalFs,harmonics)):
+    results[n], eResults[n], beams[n], createdRays[n] = bm31_oasys_xrd.run(energy=e, nrays= nrays, focalEnergy=focalEnergy, eRange=eRange,
                                                            meridionalDist = m,  autoStart=True, imageDist=bm31_oasys_xrd.f2 + 20, harmonic = h)
 
-for n,(e,m,me) in enumerate(zip(energies, meridionalFs,monoEnergies)):
-
+for n in results:
+    e = energies[n]
+    m = meridionalFs[n]
+    cr = createdRays[n]
     intensity = results[n]['intensity']
     fwhmH = results[n]['fwhm_h']*10 #mm
     fwhmV = results[n]['fwhm_v']*10 #mm
     fwhmE = eResults[n]["fwhm"]
-    intRatio = intensity/nrays
     energyIndex = np.abs(fluxEnergy-e).argmin()
     fluxInitial = fluxDensity[energyIndex]
-    NphotonsI = fluxInitial*eRange/(e/1000) #approximate
-    NphotonsF = NphotonsI*intRatio #approximate
+    NphotonsI = initialPhotons(fluxInitial,eRange,e) #approximate
+    NphotonsF = finalPhotons(NphotonsI, cr, intensity) #approximate
     print()
-    fluxEnd = intRatio*fluxInitial #this is approximating equal flux density in the energy range
-    f2 = bm31_oasys_xrd.srTof2(me,sr)
+    f2 = bm31_oasys_xrd.srTof2(e,harmonics[n],sr)
     string = (f"{e} eV\n"
-    f"source flux density: {fluxInitial:.6e}\n"
+    f"source flux density: {fluxInitial:.6e} photons/(s 0.1%bw)\n"
     f"source total photons/s: {NphotonsI:.6e}\n"
+    f"created/accepted: {cr/nrays}\n"
     f"meridional fdist: {m} cm\n"
-    f"mono energy: {me} eV\n"
+    f"mono energy: {e} eV\n"
     f"focal distance: {f2:.1f} cm\n"
     f"intensity: {intensity:.1f}\n"
     f"final photons/s: {NphotonsF:.6e}\n"
