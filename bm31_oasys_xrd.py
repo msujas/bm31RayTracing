@@ -9,12 +9,12 @@ import matplotlib.pyplot as plt
 from bm31_oasys import dctToFile, readConfig, whereStart, fluxEnergy, fluxDensity, direc, readCreatedRays, writeCreatedRays, initialPhotons, finalPhotons
 import os
 
-energy = 47000
+energy = 47000*3
 focalEnergy = 47000
 meridionalDist = 10000
 nrays = 500000
 eRange = 200
-harmonic = False
+harmonic = True
 autoStart = True #set to False for first use
 
 
@@ -239,7 +239,11 @@ def run(energy = 49000,  focalEnergy = 49000, meridionalDist = 1000000, writeBea
     #if writeBeam:
     #    beam.write(f"{beamFile}.03")
     result = beam.histo2(1,3, nbins= 101,nolost=1)
-    eResult = beam.histo1(11,nbins = 501, nolost=  1, ref = 23)
+    if harmonic:
+        nbins = 10001
+    else:
+        nbins = 501
+    eResult = beam.histo1(11,nbins = nbins, nolost=  1, ref = 23)
     #Shadow.ShadowTools.plotxy(beam,1,3,block=block,nbins=101,nolost=1,title="Real space")
     # Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,nolost=1,title="Phase space X")
     # Shadow.ShadowTools.plotxy(beam,3,6,nbins=101,nolost=1,title="Phase space Z")
@@ -280,7 +284,11 @@ if __name__ == '__main__':
     f"intensity/(fwhm_v*fwhm_h) {intensity/(fwhmV*fwhmH):.1f}\n")
     print(string)
     Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,nolost=1,title="Real space")
-    Shadow.ShadowTools.histo1(beam,11,nbins = 501, nolost=  1, ref = 23)
+    if harmonic:
+        nbins = 10001
+    else:
+        nbins = 501
+    Shadow.ShadowTools.histo1(beam,11,nbins = nbins, nolost=  1, ref = 23)
     
     #plt.stairs(eResult['histogram'],eResult['bins'])
     #plt.xlabel('energy (eV)')

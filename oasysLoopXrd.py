@@ -4,9 +4,9 @@ import numpy as np
 from bm31_oasys import fluxEnergy, fluxDensity, initialPhotons, finalPhotons
 import os
 
-energies =  [47500]*6 #np.linspace(47000,51000,5)
-meridionalFs = [1000, 2000,5000,10000,100000, 1000000]
-harmonics = [False]*6
+energies =  [47500]*5 +[47500*3] #np.linspace(47000,51000,5)
+meridionalFs = [1000, 2000,5000,10000,100000, 100000]
+harmonics = [False,False,False,False,False, True]
 nrays = 500000
 focalEnergy = 47000
 results=  {}
