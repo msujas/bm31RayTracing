@@ -61,4 +61,8 @@ for n in results:
     f.close()
     if plot:
         Shadow.ShadowTools.plotxy(beams[n],1,3,nbins=101,nolost=1,title=f"xz e={e}, MerFoc={m}")
-        Shadow.ShadowTools.histo1(beams[n],11,nbins = 201, nolost=  1, ref = 23)#, title=f"energy e={energies[n]}, MerFoc={meridionalFs[n]}")
+        if harmonics[n]:
+            nbins = 10001
+        else:
+            nbins = 201
+        Shadow.ShadowTools.histo1(beams[n],11,nbins = nbins, nolost=  1, ref = 23)#, title=f"energy e={energies[n]}, MerFoc={meridionalFs[n]}")

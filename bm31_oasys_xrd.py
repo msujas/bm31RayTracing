@@ -242,7 +242,7 @@ def run(energy = 49000,  focalEnergy = 49000, meridionalDist = 1000000, writeBea
     if harmonic:
         nbins = 10001
     else:
-        nbins = 501
+        nbins = 201
     eResult = beam.histo1(11,nbins = nbins, nolost=  1, ref = 23)
     #Shadow.ShadowTools.plotxy(beam,1,3,block=block,nbins=101,nolost=1,title="Real space")
     # Shadow.ShadowTools.plotxy(beam,1,4,nbins=101,nolost=1,title="Phase space X")
