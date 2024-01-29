@@ -81,6 +81,8 @@ def whereStart(config,oldConfig, startDct):
             return startDct[item]
     return startDct[item]+1
 
+if not os.path.exists(f'{direc}/config/'):
+    os.makedirs(f'{direc}/config/')
 
 def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, writeBeam=True, 
         nrays = 100000, traceStart = 0, autoStart = False, harmonic = False):
