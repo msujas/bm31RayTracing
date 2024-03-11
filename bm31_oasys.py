@@ -14,7 +14,7 @@ energy = 9000
 harmonic = False
 torroidalMirrorAngle = 3 #mrad from surface
 secondCrystalRot = 0.00 #0.001 for detuning 60%
-firstMirrorAngle = 2
+firstMirrorAngle = 3
 dspacing = 3.13379
 nrays = 1000000
 eRange = 50
@@ -317,7 +317,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     #Run SHADOW to create the source
     if traceStart < 1:
         beam.genSource(oe0)
-        createdRays = oe0.NTOTALPOINT
+        createdRays = oe0.NTOTALPOINT #find total generated rays (greater than nrays)
         writeCreatedRays(createdRays, createdRaysLog)
     if writeBeam and traceStart < 1:
         print(f'writing {beamFile}.00')
@@ -404,8 +404,9 @@ if __name__ == '__main__':
     eFWHM = eResult['fwhm']
     string = (f"source flux density: {fluxInitial:.6e} photons/(s 0.1%bw)\n"
     f"source total photons/s: {NphotonsI:.6e}\n"
+    f"total created rays {createdRays}\n"
     f"created/accepted: {createdRays/nrays:.6f}\n"
-    f"intensity: {result['intensity']:.1f}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
+    f"intensity: {result['intensity']:.1e}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
     f"final photons/s {NphotonsF:.6e}\n"
     f"fwhm_h: {result['fwhm_h']*10:.6f} mm\n"
     f"fwhm_v: {result['fwhm_v']*10:.6f} mm\n"

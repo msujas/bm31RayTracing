@@ -4,10 +4,17 @@ import numpy as np
 from bm31_oasys import fluxEnergy, fluxDensity, initialPhotons, finalPhotons
 import os
 
-energies = [9000,9000, 9000,27000,27000, 27000]
-colMirrorAngles = [3.002,3.002,2,3.002, 3.002,2]
-torroidalMirrorAngles = [3.002,3.002,3.002,3.002, 3.002, 3.002] #mrad from surface
-secondCrystalRots = [0,0.001,0,0,0.001,0]
+energies = [9000,9000]
+harmonics = [False]*len(energies)
+
+harmonicEnergies = [x*3 for x in energies]
+harmonics += [True]*len(harmonicEnergies)
+energies = energies + harmonicEnergies
+
+
+colMirrorAngles = [3.002,3.002,3.002, 3.002]
+torroidalMirrorAngles = [3.002,3.002,3.002,3.002] #mrad from surface
+secondCrystalRots = [0,0.001,0,0.001]
 results = {}
 eResults = {}
 beams = {}
@@ -15,7 +22,6 @@ createdRays = {}
 nrays = 1000000
 eRange = 50
 plot = True
-harmonics = [False, False, False, True, True, True]
 
 resultsFile = 'resultsXAS.dat'
 
@@ -45,7 +51,8 @@ for n in results:
     f"harmoic: {harmonics[n]}\n"
     f"source flux density: {fluxInitial:.6e} photons/(s 0.1%bw)\n"
     f"source total photons/s: {NphotonsI:.6e}\n"
-    f"intensity: {results[n]['intensity']:.1f}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
+    f"total created rays: {createdRays[n]}\n"
+    f"intensity: {results[n]['intensity']:.1e}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
     f"final photons/s {NphotonsF:.6e}\n"
     f"fwhm_h: {results[n]['fwhm_h']*10:.6f} mm\n"
     f"fwhm_v: {results[n]['fwhm_v']*10:.6f} mm\n"
