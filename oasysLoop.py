@@ -15,6 +15,8 @@ energies = energies + harmonicEnergies
 colMirrorAngles = [3.002,3.002,3.002, 3.002]
 torroidalMirrorAngles = [3.002,3.002,3.002,3.002] #mrad from surface
 secondCrystalRots = [0,0.001,0,0.001]
+coating1s = ['Rh']*len(energies)
+coating2s = coating1s
 results = {}
 eResults = {}
 beams = {}
@@ -25,11 +27,13 @@ plot = True
 
 resultsFile = 'resultsXAS.dat'
 
-for n, (energy, colAngle, torroidalMirrorAngle, secondCrystalRot,harmonic) in enumerate(zip(energies, colMirrorAngles,
-                                                                                            torroidalMirrorAngles,secondCrystalRots,harmonics)):
+for n, (energy, colAngle, torroidalMirrorAngle, secondCrystalRot,harmonic, c1, c2) in enumerate(zip(energies, colMirrorAngles,
+                                                                                            torroidalMirrorAngles,secondCrystalRots,harmonics,
+                                                                                            coating1s, coating2s)):
     results[n],eResults[n], beams[n], createdRays[n] = bm31_oasys.run(energy=energy, colMirrorRad=colAngle, eRange=eRange,
                                                       torrAnglemRad=torroidalMirrorAngle, secondCrystalRot=secondCrystalRot,  
-                                                      nrays = nrays, writeBeam=True, autoStart=True, harmonic = harmonic)
+                                                      nrays = nrays, writeBeam=True, autoStart=True, harmonic = harmonic, coating1=c1, 
+                                                      coating2=c2)
 if os.path.exists(resultsFile):
     os.remove(resultsFile)
 

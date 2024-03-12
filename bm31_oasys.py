@@ -7,14 +7,16 @@ np = numpy
 from srxraylib.sources import srfunc
 import os
 import matplotlib.pyplot as plt
+from enum import Enum
 
-
-direc = r'C:\Users\kenneth1a\Documents\mirrors'
-energy = 9000
+direc = os.path.dirname(os.path.realpath(__file__))
+energy = 5000
 harmonic = False
 torroidalMirrorAngle = 3 #mrad from surface
 secondCrystalRot = 0.00 #0.001 for detuning 60%
 firstMirrorAngle = 3
+coating1 = 'Rh'
+coating2 = 'Rh'
 dspacing = 3.13379
 nrays = 1000000
 eRange = 50
@@ -77,15 +79,31 @@ def finalPhotons(initialPhotons, totalnrays, intensity):
 def whereStart(config,oldConfig, startDct):
     startDctSorted = dict(sorted(startDct.items(), key = lambda x: x[1]))
     for item in startDctSorted:
-        if str(config[item]) != oldConfig[item]:
+        if item not in list(oldConfig.keys()):
+            return startDct[item]
+        elif str(config[item]) != oldConfig[item]:
             return startDct[item]
     return startDct[item]+1
+
+class Coating(Enum):
+    Rh = 'Rh'
+    Pt = 'Pt'
+    Si = 'Si'
+    def file(self):
+        if self.value == 'Rh':
+            return bytes(f'{direc}/RhReflec_4p9_150.dat',encoding = 'utf-8')
+        elif self.value == 'Pt':
+            return bytes(f'{direc}/PtReflec_4p9_150.dat',encoding = 'utf-8')
+        elif self.value == 'Si':
+            return bytes(f'{direc}/SiReflec_4p9_150.dat',encoding = 'utf-8')
+
 
 if not os.path.exists(f'{direc}/config/'):
     os.makedirs(f'{direc}/config/')
 
 def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, writeBeam=True, 
-        nrays = 100000, traceStart = 0, autoStart = False, harmonic = False):
+        nrays = 100000, traceStart = 0, autoStart = False, harmonic = False, coating1 = 'Rh', coating2 = 'Rh'):
+
     torrAngleDeg = mradSurface_to_degNorm(torrAnglemRad)
     colMirrorDeg = mradSurface_to_degNorm(colMirrorRad)
 
@@ -94,8 +112,9 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     fname = 'output.dat'
 
     config = {'energy':energy,'eRange':eRange, 'colMirrorRad': colMirrorRad, 'torrAnglemRad':torrAnglemRad, 'secondCrystalRot':secondCrystalRot,
-              'nrays':nrays, 'harmonic':harmonic}
-    startDct = {'energy':0, 'eRange': 0, 'colMirrorRad':2, 'secondCrystalRot':4,'torrAnglemRad':5,'nrays':0, 'harmonic': 3}
+              'nrays':nrays, 'harmonic':harmonic, 'coating1':coating1, 'coating2':coating2}
+    startDct = {'energy':0, 'eRange': 0, 'colMirrorRad':2, 'secondCrystalRot':4,'torrAnglemRad':5,'nrays':0, 'harmonic': 3, 'coating1':2,
+                'coating2':5}
     if os.path.exists(configFile):
         oldConfig = readConfig(configFile)
         autoTraceStart = whereStart(config,oldConfig,startDct)
@@ -114,12 +133,17 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
 
     beam = Shadow.Beam()
 
-    file111 = bytes(f'{direc}/Si5_55.111',encoding = 'utf-8')
+    file111 = bytes(f'{direc}/bragg111.dat',encoding = 'utf-8')
     file333 = bytes(f'{direc}/bragg333.dat',encoding = 'utf-8')
     if harmonic:
         dcmfile = file333
     else:
         dcmfile = file111
+    
+    coatingFile1 = Coating(coating1).file()
+    coatingFile2 = Coating(coating2).file()
+
+
     beamFile = 'config/beam'
     if traceStart > 0:
         beam.load(f'{beamFile}.{traceStart-1:02d}')
@@ -227,7 +251,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     oe2.DUMMY = 1.0
     oe2.FCYL = 1
     oe2.FHIT_C = 1
-    oe2.FILE_REFL = bytes(f'{direc}/Rhreflec.dat',encoding = 'utf-8')
+    oe2.FILE_REFL = coatingFile1
     oe2.FILE_RIP = bytes(f'{direc}/Colmirror1m_1u.dat', encoding = 'utf-8')
     oe2.FMIRR = 1
     oe2.F_DEFAULT = 0
@@ -292,7 +316,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     #oe5 - torroidal mirror
     oe5.DUMMY = 1.0
     oe5.FHIT_C = 1
-    oe5.FILE_REFL = bytes(f'{direc}/Rhreflec.dat',encoding = 'utf-8')
+    oe5.FILE_REFL = coatingFile2
     oe5.FILE_RIP = bytes(f'{direc}/Colmirror1m_1u.dat',encoding = 'utf-8')
     oe5.FMIRR = 3
     oe5.FWRITE = 2
@@ -391,7 +415,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
 if __name__ == '__main__':
     result, eResult, beam, createdRays = run(energy = energy, eRange = eRange, colMirrorRad=firstMirrorAngle, torrAnglemRad=torroidalMirrorAngle, 
                                 secondCrystalRot =  secondCrystalRot, writeBeam=writeBeam, nrays=nrays, 
-                                traceStart=traceStart, autoStart=autoStart, harmonic=harmonic)
+                                traceStart=traceStart, autoStart=autoStart, harmonic=harmonic, coating1=coating1, coating2=coating2)
     #print(result.keys())
     
     intensity = result['intensity']

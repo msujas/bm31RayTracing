@@ -1,5 +1,5 @@
 effic*
-config/*
+config
 mirr*
 optax*
 *.pptx
@@ -18,3 +18,4 @@ SRANG
 SRDISTR
 SRSPEC
 tmp.*
+__pycache__

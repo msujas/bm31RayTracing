@@ -52,7 +52,7 @@ def run(energy = 49000,  focalEnergy = 49000, meridionalDist = 1000000, writeBea
     createdRaysLog = 'config/createdRaysXRD.log'
 
     file333 = bytes(f'{direc}/bragg333.dat',encoding = 'utf-8')
-    file111 = bytes(f'{direc}/Si5_55.111',encoding = 'utf-8')
+    file111 = bytes(f'{direc}/bragg111.dat',encoding = 'utf-8')
 
     if harmonic:
         braggFile = file333
