@@ -2,26 +2,28 @@ import bm31_oasys
 import Shadow
 import numpy as np
 from bm31_oasys import fluxEnergy, fluxDensity, initialPhotons, finalPhotons
+import matplotlib.pyplot as plt
 import os
+import pandas as pd
 
-energies = [9000,9000]
+energies = np.arange(6000,7001,1000)
 harmonics = [False]*len(energies)
 
-harmonicEnergies = [x*3 for x in energies]
+harmonicEnergies = energies*3
 harmonics += [True]*len(harmonicEnergies)
-energies = energies + harmonicEnergies
+energies = np.append(energies,harmonicEnergies)
 
 
-colMirrorAngles = [3.002,3.002,3.002, 3.002]
-torroidalMirrorAngles = [3.002,3.002,3.002,3.002] #mrad from surface
-secondCrystalRots = [0,0.001,0,0.001]
+colMirrorAngles = [3.002]*len(energies)
+torroidalMirrorAngles = [3.002]*len(energies) #mrad from surface
+secondCrystalRots = [0]*len(energies)
 coating1s = ['Rh']*len(energies)
 coating2s = coating1s
 results = {}
 eResults = {}
 beams = {}
 createdRays = {}
-nrays = 1000000
+nrays = 500000
 eRange = 50
 plot = True
 
@@ -34,40 +36,72 @@ for n, (energy, colAngle, torroidalMirrorAngle, secondCrystalRot,harmonic, c1, c
                                                       torrAnglemRad=torroidalMirrorAngle, secondCrystalRot=secondCrystalRot,  
                                                       nrays = nrays, writeBeam=True, autoStart=True, harmonic = harmonic, coating1=c1, 
                                                       coating2=c2)
+
+intPlot = []
 if os.path.exists(resultsFile):
     os.remove(resultsFile)
 
+df = pd.DataFrame(columns = ['energy(eV)', 'harmonic', 'collimatingMirrorAngle(mrad)','torroidalMirrorAngle(mrad)','secondCrystalRotation(°)',
+                             'coating1','coating2',r'sourceFluxDensity(photons/(s.0.1%bw))', 'sourcePhotons/s','finalPhotons/s',
+                             'totalCreatedRays','intensity','created/accepted','fwhm_h(mm)','fwhm_v(mm)','energyFWHM(eV)'])
 for n in results:
     intensity = results[n]['intensity']
+    intPlot.append(intensity)
     intRatio = intensity/nrays
     energy = energies[n]
+    harmonic = harmonics[n]
+    fwhmH = results[n]['fwhm_h']*10
+    fwhmV = results[n]['fwhm_v']*10
+    fwhmE = eResults[n]['fwhm']
+    colAngle = colMirrorAngles[n]
+    torrAngle = torroidalMirrorAngles[n]
+    secCrystRot = secondCrystalRots[n]
     energyIndex = np.abs(fluxEnergy-energy).argmin()
     fluxInitial = fluxDensity[energyIndex]
+    coat1 = coating1s[n]
+    coat2 = coating2s[n]
+    cr = createdRays[n]
     print()
     fluxEnd = intRatio*fluxInitial #this is approximating equal flux density in the energy range
     NphotonsI = initialPhotons(fluxInitial,eRange,energy) #approximate
 
     NphotonsF = finalPhotons(NphotonsI, createdRays[n], intensity)  #approximate
     string = (f"energy: {energy} eV\n"
-    f"collimating mirror angle: {colMirrorAngles[n]} mrad\n"
-    f"torroidal mirror angle: {torroidalMirrorAngles[n]} mrad\n"
-    f"second crystal rotation: {secondCrystalRots[n]} °\n"
-    f"harmoic: {harmonics[n]}\n"
+    f"harmoic: {harmonic}\n"
+    f"collimating mirror angle: {colAngle} mrad\n"
+    f"torroidal mirror angle: {torrAngle} mrad\n"
+    f"second crystal rotation: {secCrystRot} °\n"
+    f"coating1: {coat1}\n"
+    f"coating2: {coat2}\n"
     f"source flux density: {fluxInitial:.6e} photons/(s 0.1%bw)\n"
     f"source total photons/s: {NphotonsI:.6e}\n"
-    f"total created rays: {createdRays[n]}\n"
-    f"intensity: {results[n]['intensity']:.1e}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
-    f"final photons/s {NphotonsF:.6e}\n"
-    f"fwhm_h: {results[n]['fwhm_h']*10:.6f} mm\n"
-    f"fwhm_v: {results[n]['fwhm_v']*10:.6f} mm\n"
-    f"energy fwhm: {eResults[n]['fwhm']:.6f} eV\n\n")
+    f"total created rays: {cr}\n"
+    f"intensity: {intensity:.1e}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
+    f"created/accepted: {cr/nrays}"
+    f"final photons/s: {NphotonsF:.6e}\n"
+    f"fwhm_h: {fwhmH:.6f} mm\n"
+    f"fwhm_v: {fwhmV:.6f} mm\n"
+    f"energy fwhm: {fwhmE:.6f} eV\n\n")
     print(string)
+    df.loc[n] = [energy,harmonic,colAngle,torrAngle,secCrystRot,coat1,coat2,fluxInitial,NphotonsI,
+                 NphotonsF,cr,intensity,cr/nrays,fwhmH,fwhmV,fwhmE]
+
     f = open(resultsFile,'a')
     f.write(string)
     f.close()
     if plot:
         Shadow.ShadowTools.plotxy(beams[n],1,3,nbins=101,nolost=1,title="Real space")
         Shadow.ShadowTools.histo1(beams[n],11,nbins = 201, nolost=  1, ref = 23)
+
+hcolourdct = {True:'blue',False:'red'}
+hcolours = [hcolourdct[x] for x in harmonics]
+plt.scatter(energies,intPlot,c = harmonics,cmap = 'bwr')
+plt.xlabel('energy (eV)')
+plt.ylabel('intensity')
+plt.legend(title = 'harmonic')
+plt.show()
+
+df.to_csv('resultsXASdf.dat',sep='\t')
 
 
 

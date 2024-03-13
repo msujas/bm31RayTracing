@@ -3,10 +3,11 @@ import Shadow
 import numpy as np
 from bm31_oasys import fluxEnergy, fluxDensity, initialPhotons, finalPhotons
 import os
+import pandas as pd
 
-energies =  [47500]*5 +[47500*3] #np.linspace(47000,51000,5)
-meridionalFs = [1000, 2000,5000,10000,100000, 100000]
-harmonics = [False,False,False,False,False, True]
+energies =  [47500] +[47500*3] #np.linspace(47000,51000,5)
+meridionalFs = [100000, 100000]
+harmonics = [False, True]
 nrays = 500000
 focalEnergy = 47000
 results=  {}
@@ -26,7 +27,9 @@ for n,(e,m,h) in enumerate(zip(energies, meridionalFs,harmonics)):
 
 if os.path.exists(resultsFile):
     os.remove(resultsFile)
-
+df = pd.DataFrame(columns = ['energy(eV)', 'harmonic', 'focalDist(cm)','merFocalDist(cm)', r'sourceFluxDensity(photons/(s.0.1%bw))', 
+                             'sourcePhotons/s','finalPhotons/s','totalCreatedRays','intensity','created/accepted','fwhm_h(mm)','fwhm_v(mm)',
+                             'energyFWHM(eV)'])
 for n in results:
     e = energies[n]
     m = meridionalFs[n]
@@ -47,7 +50,7 @@ for n in results:
     f"harmonic: {harmonics[n]}\n"
     f"source flux density: {fluxInitial:.6e} photons/(s 0.1%bw)\n"
     f"source total photons/s: {NphotonsI:.6e}\n"
-    f"total created rays: {createdRays[n]}\n"
+    f"total created rays: {cr}\n"
     f"created/accepted: {cr/nrays}\n"
     f"intensity: {intensity:.1e}\n"
     f"final photons/s: {NphotonsF:.6e}\n"
@@ -60,6 +63,7 @@ for n in results:
     f = open(resultsFile,'a')
     f.write(string)
     f.close()
+    df.loc[n] = [e,harmonics[n],f2,m,fluxInitial,NphotonsI,NphotonsF,cr,intensity,cr/nrays,fwhmH,fwhmV,fwhmE]
     if plot:
         Shadow.ShadowTools.plotxy(beams[n],1,3,nbins=101,nolost=1,title=f"xz e={e}, MerFoc={m}")
         if harmonics[n]:
@@ -67,3 +71,6 @@ for n in results:
         else:
             nbins = 201
         Shadow.ShadowTools.histo1(beams[n],11,nbins = nbins, nolost=  1, ref = 23)#, title=f"energy e={energies[n]}, MerFoc={meridionalFs[n]}")
+
+
+df.to_csv('resultsXRDdf.dat',sep='\t')
