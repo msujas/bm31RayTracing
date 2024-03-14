@@ -44,7 +44,7 @@ if os.path.exists(resultsFile):
     os.remove(resultsFile)
 
 df = pd.DataFrame(columns = ['energy(eV)', 'harmonic', 'collimatingMirrorAngle(mrad)','torroidalMirrorAngle(mrad)','secondCrystalRotation(°)',
-                             'coating1','coating2',r'sourceFluxDensity(photons/(s.0.1%bw))', 'sourcePhotons/s','finalPhotons/s',
+                             'coating1','coating2',r'sourceFluxDensity(photons/(s.0.1%bw))', 'sourcePhotons/s','finalPhotons/s', 'finalPhotonDensity(p/(s_mm2))',
                              'totalCreatedRays','intensity','created/accepted','fwhm_h(mm)','fwhm_v(mm)','energyFWHM(eV)'])
 for n in results:
     intensity = results[n]['intensity']
@@ -93,7 +93,7 @@ for n in results:
     f"{fwhmEstring}")
     print(string)
     df.loc[n] = [energy,harmonic,colAngle,torrAngle,secCrystRot,coat1,coat2,fluxInitial,NphotonsI,
-                 NphotonsF,cr,intensity,cr/nrays,fwhmH,fwhmV,fwhmE]
+                 NphotonsF,photonDensityF,cr,intensity,cr/nrays,fwhmH,fwhmV,fwhmE]
 
     f = open(resultsFile,'a')
     f.write(string)

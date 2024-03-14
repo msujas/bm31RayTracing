@@ -28,7 +28,7 @@ for n,(e,m,h) in enumerate(zip(energies, meridionalFs,harmonics)):
 if os.path.exists(resultsFile):
     os.remove(resultsFile)
 df = pd.DataFrame(columns = ['energy(eV)', 'harmonic', 'focalDist(cm)','merFocalDist(cm)', r'sourceFluxDensity(photons/(s.0.1%bw))', 
-                             'sourcePhotons/s','finalPhotons/s','totalCreatedRays','intensity','created/accepted','fwhm_h(mm)','fwhm_v(mm)',
+                             'sourcePhotons/s','finalPhotons/s','finalPhotonDensity(p/(s_mm2))','totalCreatedRays','intensity','created/accepted','fwhm_h(mm)','fwhm_v(mm)',
                              'energyFWHM(eV)'])
 for n in results:
     e = energies[n]
@@ -42,6 +42,7 @@ for n in results:
     fluxInitial = fluxDensity[energyIndex]
     NphotonsI = initialPhotons(fluxInitial,eRange,e) #approximate
     NphotonsF = finalPhotons(NphotonsI, cr, intensity) #approximate
+    photonDensityF = NphotonsF/(fwhmH*fwhmV)
     print()
     f2 = bm31_oasys_xrd.srTof2(e,harmonics[n],sr)
     string = (f"{e} eV\n"
@@ -63,7 +64,7 @@ for n in results:
     f = open(resultsFile,'a')
     f.write(string)
     f.close()
-    df.loc[n] = [e,harmonics[n],f2,m,fluxInitial,NphotonsI,NphotonsF,cr,intensity,cr/nrays,fwhmH,fwhmV,fwhmE]
+    df.loc[n] = [e,harmonics[n],f2,m,fluxInitial,NphotonsI,NphotonsF,photonDensityF,cr,intensity,cr/nrays,fwhmH,fwhmV,fwhmE]
     if plot:
         Shadow.ShadowTools.plotxy(beams[n],1,3,nbins=101,nolost=1,title=f"xz e={e}, MerFoc={m}")
         if harmonics[n]:
