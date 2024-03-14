@@ -15,13 +15,16 @@ harmonic = False
 torroidalMirrorAngle = 3 #mrad from surface
 secondCrystalRot = 0.00 #0.001 for detuning 60%
 firstMirrorAngle = 3
-coating1 = 'Rh'
-coating2 = 'Rh'
+coating1 = 'Pt'
+coating2 = 'Pt'
+mirror1type = 'spherical'
+mirror2type = 'torroidal'
+
 dspacing = 3.13379
 nrays = 1000000
 eRange = 50
 
-autoStart = True #set to False with first use
+autoStart = False #set to False with first use
 traceStart = 0
 
 
@@ -97,12 +100,61 @@ class Coating(Enum):
         elif self.value == 'Si':
             return bytes(f'{direc}/SiReflec_4p9_150.dat',encoding = 'utf-8')
 
+def mirrorType(oe,coatingFile,angle, mtype):
+    if mtype == 'collimating' or mtype == 'spherical':
+        oe.DUMMY = 1.0
+        oe.FCYL = 1
+        oe.FHIT_C = 1
+        oe.FILE_REFL = coatingFile
+        oe.FILE_RIP = bytes(f'{direc}/Colmirror1m_1u.dat', encoding = 'utf-8')
+        oe.FMIRR = 1
+        oe.F_DEFAULT = 0
+        oe.F_G_S = 2
+        oe.F_REFLEC = 1
+        oe.F_RIPPLE = 1
+        oe.RLEN1 = 50.0
+        oe.RLEN2 = 50.0
+        oe.RWIDX1 = 4.0
+        oe.RWIDX2 = 4.0
+        oe.SIMAG = 1.00000003e+16
+        oe.SSOUR = 2886.3
+        oe.THETA = angle
+        oe.T_IMAGE = 0.0
+        oe.T_INCIDENCE = angle
+        oe.T_REFLECTION = angle
+        oe.T_SOURCE = 200.0
+
+    elif mtype == 'torroidal':
+        oe.DUMMY = 1.0
+        oe.FHIT_C = 1
+        oe.FILE_REFL = coatingFile
+        oe.FILE_RIP = bytes(f'{direc}/Colmirror1m_1u.dat',encoding = 'utf-8')
+        oe.FMIRR = 3
+        oe.FWRITE = 2
+        oe.F_ANGLE = 1
+        oe.F_EXT = 1
+        oe.F_G_S = 2
+        oe.F_REFLEC = 1
+        oe.F_RIPPLE = 1
+        oe.RLEN1 = 50.0
+        oe.RLEN2 = 50.0
+        oe.RWIDX1 = 5.0
+        oe.RWIDX2 = 5.0
+        oe.R_MAJ = 1067159.1907 #meridional radius
+        oe.R_MIN = 6.4533 #torroidal radius
+        oe.T_IMAGE = 1601.8
+        oe.T_INCIDENCE = angle
+        oe.T_REFLECTION = angle
+        oe.T_SOURCE = 209.9
+    else:
+        raise ValueError(f'"{mtype}" is an invalid mirror type. Must be "spherical"/"collimating" or "torroidal"')
 
 if not os.path.exists(f'{direc}/config/'):
     os.makedirs(f'{direc}/config/')
 
 def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, writeBeam=True, 
-        nrays = 100000, traceStart = 0, autoStart = False, harmonic = False, coating1 = 'Rh', coating2 = 'Rh'):
+        nrays = 100000, traceStart = 0, autoStart = False, harmonic = False, coating1 = 'Rh', coating2 = 'Rh',mirror1type = 'spherical',
+        mirror2type = 'torroidal'):
 
     torrAngleDeg = mradSurface_to_degNorm(torrAnglemRad)
     colMirrorDeg = mradSurface_to_degNorm(colMirrorRad)
@@ -248,27 +300,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     oe1.T_SOURCE = 2686.3
 
     #oe2 - first mirror (collimatring)
-    oe2.DUMMY = 1.0
-    oe2.FCYL = 1
-    oe2.FHIT_C = 1
-    oe2.FILE_REFL = coatingFile1
-    oe2.FILE_RIP = bytes(f'{direc}/Colmirror1m_1u.dat', encoding = 'utf-8')
-    oe2.FMIRR = 1
-    oe2.F_DEFAULT = 0
-    oe2.F_G_S = 2
-    oe2.F_REFLEC = 1
-    oe2.F_RIPPLE = 1
-    oe2.RLEN1 = 50.0
-    oe2.RLEN2 = 50.0
-    oe2.RWIDX1 = 4.0
-    oe2.RWIDX2 = 4.0
-    oe2.SIMAG = 1.00000003e+16
-    oe2.SSOUR = 2886.3
-    oe2.THETA = colMirrorDeg
-    oe2.T_IMAGE = 0.0
-    oe2.T_INCIDENCE = colMirrorDeg
-    oe2.T_REFLECTION = colMirrorDeg
-    oe2.T_SOURCE = 200.0
+    mirrorType(oe2,coatingFile1,colMirrorDeg,mtype = mirror1type)
 
     #oe3 - first mono crystal
     oe3.ALPHA = 0
@@ -314,29 +346,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     oe4.X_ROT = secondCrystalRot
 
     #oe5 - torroidal mirror
-    oe5.DUMMY = 1.0
-    oe5.FHIT_C = 1
-    oe5.FILE_REFL = coatingFile2
-    oe5.FILE_RIP = bytes(f'{direc}/Colmirror1m_1u.dat',encoding = 'utf-8')
-    oe5.FMIRR = 3
-    oe5.FWRITE = 2
-    oe5.F_ANGLE = 1
-    oe5.F_EXT = 1
-    oe5.F_G_S = 2
-    oe5.F_REFLEC = 1
-    oe5.F_RIPPLE = 1
-    oe5.RLEN1 = 50.0
-    oe5.RLEN2 = 50.0
-    oe5.RWIDX1 = 5.0
-    oe5.RWIDX2 = 5.0
-    oe5.R_MAJ = 1067159.1907 #meridional radius
-    oe5.R_MIN = 6.4533 #torroidal radius
-    oe5.T_IMAGE = 1601.8
-    oe5.T_INCIDENCE = torrAngleDeg
-    oe5.T_REFLECTION = torrAngleDeg
-    oe5.T_SOURCE = 209.9
-
-
+    mirrorType(oe5,coatingFile2,torrAngleDeg,mtype = mirror2type)
 
     #Run SHADOW to create the source
     if traceStart < 1:
@@ -415,7 +425,8 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
 if __name__ == '__main__':
     result, eResult, beam, createdRays = run(energy = energy, eRange = eRange, colMirrorRad=firstMirrorAngle, torrAnglemRad=torroidalMirrorAngle, 
                                 secondCrystalRot =  secondCrystalRot, writeBeam=writeBeam, nrays=nrays, 
-                                traceStart=traceStart, autoStart=autoStart, harmonic=harmonic, coating1=coating1, coating2=coating2)
+                                traceStart=traceStart, autoStart=autoStart, harmonic=harmonic, coating1=coating1, coating2=coating2,
+                                mirror1type=mirror1type,mirror2type=mirror2type)
     #print(result.keys())
     
     intensity = result['intensity']
@@ -426,6 +437,11 @@ if __name__ == '__main__':
     NphotonsI = initialPhotons(fluxInitial,eRange,energy) #approximate
     NphotonsF = finalPhotons(NphotonsI,createdRays,intensity) #approximate
     eFWHM = eResult['fwhm']
+
+    if eFWHM == None:
+        eFWHMstring = f"energy fwhm: NA\n"
+    else:
+        eFWHMstring = f"energy fwhm: {eFWHM:.6f} eV\n"
     string = (f"source flux density: {fluxInitial:.6e} photons/(s 0.1%bw)\n"
     f"source total photons/s: {NphotonsI:.6e}\n"
     f"total created rays {createdRays}\n"
@@ -434,7 +450,7 @@ if __name__ == '__main__':
     f"final photons/s {NphotonsF:.6e}\n"
     f"fwhm_h: {result['fwhm_h']*10:.6f} mm\n"
     f"fwhm_v: {result['fwhm_v']*10:.6f} mm\n"
-    f"energy fwhm: {eFWHM:.6f} eV\n")
+    f"{eFWHMstring}")
     print(string)
     Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,nolost=1,title="Real space")
     Shadow.ShadowTools.histo1(beam,11,nbins = 501, nolost=  1, ref = 23)

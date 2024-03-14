@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 
-energies = np.arange(6000,7001,1000)
+energies = np.arange(5000,6001,1000)
 harmonics = [False]*len(energies)
 
 harmonicEnergies = energies*3
@@ -17,21 +17,23 @@ energies = np.append(energies,harmonicEnergies)
 colMirrorAngles = [3.002]*len(energies)
 torroidalMirrorAngles = [3.002]*len(energies) #mrad from surface
 secondCrystalRots = [0]*len(energies)
-coating1s = ['Rh']*len(energies)
+coating1s = ['Pt']*len(energies)
 coating2s = coating1s
+mirror1types = ['spherical']*len(energies)
+mirror2types = ['torroidal']*len(energies)
 results = {}
 eResults = {}
 beams = {}
 createdRays = {}
-nrays = 500000
+nrays = 1000000
 eRange = 50
 plot = True
 
 resultsFile = 'resultsXAS.dat'
 
-for n, (energy, colAngle, torroidalMirrorAngle, secondCrystalRot,harmonic, c1, c2) in enumerate(zip(energies, colMirrorAngles,
+for n, (energy, colAngle, torroidalMirrorAngle, secondCrystalRot,harmonic, c1, c2, m1, m2) in enumerate(zip(energies, colMirrorAngles,
                                                                                             torroidalMirrorAngles,secondCrystalRots,harmonics,
-                                                                                            coating1s, coating2s)):
+                                                                                            coating1s, coating2s, mirror1types, mirror2types)):
     results[n],eResults[n], beams[n], createdRays[n] = bm31_oasys.run(energy=energy, colMirrorRad=colAngle, eRange=eRange,
                                                       torrAnglemRad=torroidalMirrorAngle, secondCrystalRot=secondCrystalRot,  
                                                       nrays = nrays, writeBeam=True, autoStart=True, harmonic = harmonic, coating1=c1, 
@@ -46,7 +48,7 @@ df = pd.DataFrame(columns = ['energy(eV)', 'harmonic', 'collimatingMirrorAngle(m
                              'totalCreatedRays','intensity','created/accepted','fwhm_h(mm)','fwhm_v(mm)','energyFWHM(eV)'])
 for n in results:
     intensity = results[n]['intensity']
-    intPlot.append(intensity)
+    
     intRatio = intensity/nrays
     energy = energies[n]
     harmonic = harmonics[n]
@@ -66,6 +68,13 @@ for n in results:
     NphotonsI = initialPhotons(fluxInitial,eRange,energy) #approximate
 
     NphotonsF = finalPhotons(NphotonsI, createdRays[n], intensity)  #approximate
+    photonDensityF = NphotonsF/(fwhmH*fwhmV)
+    intPlot.append(photonDensityF)
+    if fwhmE == None:
+        fwhmEstring = f"energy fwhm: NA\n"
+        fwhmE = 'NA'
+    else:
+        fwhmEstring = f"energy fwhm: {fwhmE:.6f} eV\n"
     string = (f"energy: {energy} eV\n"
     f"harmoic: {harmonic}\n"
     f"collimating mirror angle: {colAngle} mrad\n"
@@ -77,11 +86,11 @@ for n in results:
     f"source total photons/s: {NphotonsI:.6e}\n"
     f"total created rays: {cr}\n"
     f"intensity: {intensity:.1e}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
-    f"created/accepted: {cr/nrays}"
+    f"created/accepted: {cr/nrays}\n"
     f"final photons/s: {NphotonsF:.6e}\n"
     f"fwhm_h: {fwhmH:.6f} mm\n"
     f"fwhm_v: {fwhmV:.6f} mm\n"
-    f"energy fwhm: {fwhmE:.6f} eV\n\n")
+    f"{fwhmEstring}")
     print(string)
     df.loc[n] = [energy,harmonic,colAngle,torrAngle,secCrystRot,coat1,coat2,fluxInitial,NphotonsI,
                  NphotonsF,cr,intensity,cr/nrays,fwhmH,fwhmV,fwhmE]
@@ -93,16 +102,11 @@ for n in results:
         Shadow.ShadowTools.plotxy(beams[n],1,3,nbins=101,nolost=1,title="Real space")
         Shadow.ShadowTools.histo1(beams[n],11,nbins = 201, nolost=  1, ref = 23)
 
+df.to_csv('resultsXASdf.dat',sep='\t')
 hcolourdct = {True:'blue',False:'red'}
 hcolours = [hcolourdct[x] for x in harmonics]
-plt.scatter(energies,intPlot,c = harmonics,cmap = 'bwr')
+plt.scatter(energies,intPlot,c = harmonics,cmap = 'bwr') #plot of (final photons/s)/(fwhmH * fwhmV)
 plt.xlabel('energy (eV)')
-plt.ylabel('intensity')
+plt.ylabel('photon density (photons/(s mm$^2$)')
 plt.legend(title = 'harmonic')
 plt.show()
-
-df.to_csv('resultsXASdf.dat',sep='\t')
-
-
-
-
