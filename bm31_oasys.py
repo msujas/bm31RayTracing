@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 from enum import Enum
 
 direc = os.path.dirname(os.path.realpath(__file__))
-energy = 5000
-harmonic = False
+energy = 15000
+harmonic = True
 torroidalMirrorAngle = 3 #mrad from surface
 secondCrystalRot = 0.00 #0.001 for detuning 60%
 firstMirrorAngle = 3
@@ -175,15 +175,6 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     #
     # initialize shadow3 source (oe0) and beam
     #
-    print(f'beginning at {traceStart}')
-    oe0 = Shadow.Source()
-    oe1 = Shadow.OE()
-    oe2 = Shadow.OE()
-    oe3 = Shadow.OE()
-    oe4 = Shadow.OE()
-    oe5 = Shadow.OE()
-
-    beam = Shadow.Beam()
 
     file111 = bytes(f'{direc}/bragg111.dat',encoding = 'utf-8')
     file333 = bytes(f'{direc}/bragg333.dat',encoding = 'utf-8')
@@ -194,6 +185,18 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     
     coatingFile1 = Coating(coating1).file()
     coatingFile2 = Coating(coating2).file()
+    
+    print(f'beginning at {traceStart}')
+    oe0 = Shadow.Source()
+    oe1 = Shadow.OE()
+    oe2 = Shadow.OE()
+    oe3 = Shadow.OE()
+    oe4 = Shadow.OE()
+    oe5 = Shadow.OE()
+
+    beam = Shadow.Beam()
+
+
 
 
     beamFile = 'config/beam'
@@ -442,12 +445,15 @@ if __name__ == '__main__':
         eFWHMstring = f"energy fwhm: NA\n"
     else:
         eFWHMstring = f"energy fwhm: {eFWHM:.6f} eV\n"
-    string = (f"source flux density: {fluxInitial:.6e} photons/(s 0.1%bw)\n"
+    string = (f"energy: {energy}\n"
+    f"harmonic: {harmonic}\n"
+    f""
+    f"source flux density: {fluxInitial:.6e} photons/(s 0.1%bw)\n"
     f"source total photons/s: {NphotonsI:.6e}\n"
     f"total created rays {createdRays}\n"
     f"created/accepted: {createdRays/nrays:.6f}\n"
     f"intensity: {result['intensity']:.1e}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
-    f"final photons/s {NphotonsF:.6e}\n"
+    f"final photons/s: {NphotonsF:.6e}\n"
     f"fwhm_h: {result['fwhm_h']*10:.6f} mm\n"
     f"fwhm_v: {result['fwhm_v']*10:.6f} mm\n"
     f"{eFWHMstring}")

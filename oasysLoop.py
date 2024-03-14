@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 
-energies = np.arange(5000,6001,1000)
+energies = np.arange(9000,10001,1000)
 harmonics = [False]*len(energies)
 
 harmonicEnergies = energies*3
@@ -17,7 +17,7 @@ energies = np.append(energies,harmonicEnergies)
 colMirrorAngles = [3.002]*len(energies)
 torroidalMirrorAngles = [3.002]*len(energies) #mrad from surface
 secondCrystalRots = [0]*len(energies)
-coating1s = ['Pt']*len(energies)
+coating1s = ['Rh']*len(energies)
 coating2s = coating1s
 mirror1types = ['spherical']*len(energies)
 mirror2types = ['torroidal']*len(energies)
@@ -25,7 +25,7 @@ results = {}
 eResults = {}
 beams = {}
 createdRays = {}
-nrays = 1000000
+nrays = 100000
 eRange = 50
 plot = True
 
@@ -88,6 +88,7 @@ for n in results:
     f"intensity: {intensity:.1e}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
     f"created/accepted: {cr/nrays}\n"
     f"final photons/s: {NphotonsF:.6e}\n"
+    f"final photon density (p/(s mm\u00b2)): {photonDensityF:.6e}\n"
     f"fwhm_h: {fwhmH:.6f} mm\n"
     f"fwhm_v: {fwhmV:.6f} mm\n"
     f"{fwhmEstring}")
@@ -103,10 +104,9 @@ for n in results:
         Shadow.ShadowTools.histo1(beams[n],11,nbins = 201, nolost=  1, ref = 23)
 
 df.to_csv('resultsXASdf.dat',sep='\t')
-hcolourdct = {True:'blue',False:'red'}
-hcolours = [hcolourdct[x] for x in harmonics]
-plt.scatter(energies,intPlot,c = harmonics,cmap = 'bwr') #plot of (final photons/s)/(fwhmH * fwhmV)
+
+scatter = plt.scatter(energies,intPlot,c = harmonics,cmap = 'bwr') #plot of (final photons/s)/(fwhmH * fwhmV)
 plt.xlabel('energy (eV)')
 plt.ylabel('photon density (photons/(s mm$^2$)')
-plt.legend(title = 'harmonic')
+plt.legend(*scatter.legend_elements(),title = 'harmonic')
 plt.show()

@@ -5,9 +5,9 @@ from bm31_oasys import fluxEnergy, fluxDensity, initialPhotons, finalPhotons
 import os
 import pandas as pd
 
-energies =  [47500] +[47500*3] #np.linspace(47000,51000,5)
-meridionalFs = [100000, 100000]
-harmonics = [False, True]
+energies =  [47500]*3 +[47500*3] #np.linspace(47000,51000,5)
+meridionalFs = [2000,5000,100000, 100000]
+harmonics = [False,False,False, True]
 nrays = 500000
 focalEnergy = 47000
 results=  {}
@@ -55,11 +55,12 @@ for n in results:
     f"created/accepted: {cr/nrays}\n"
     f"intensity: {intensity:.1e}\n"
     f"final photons/s: {NphotonsF:.6e}\n"
+    f"final photon denstiy (p/(s mm\u00b2)): {photonDensityF:.6e}\n"
     f"fwhm_h: {fwhmH} mm\n"
     f"fwhm_v: {fwhmV} mm\n"
     f"energy fwhm: {fwhmE} eV\n"
     f"intensity/fwhm_v: {intensity/fwhmV:.1f}\n"
-    f"intensity/(fwhm_v*fwhm_h) {intensity/(fwhmV*fwhmH):.1f}\n\n")
+    f"intensity/(fwhm_v*fwhm_h): {intensity/(fwhmV*fwhmH):.1f}\n\n")
     print(string)
     f = open(resultsFile,'a')
     f.write(string)
