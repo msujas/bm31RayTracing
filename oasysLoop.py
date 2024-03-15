@@ -21,6 +21,8 @@ coating1s = ['Pt']*len(energies)
 coating2s = coating1s
 mirror1types = ['spherical']*len(energies)
 mirror2types = ['torroidal']*len(energies)
+torrMajors = [1067159]*len(energies)
+torrMinors = [6.4533]*len(energies)
 results = {}
 eResults = {}
 beams = {}
@@ -31,13 +33,14 @@ plot = True
 
 resultsFile = 'resultsXAS.dat'
 
-for n, (energy, colAngle, torroidalMirrorAngle, secondCrystalRot,harmonic, c1, c2, m1, m2) in enumerate(zip(energies, colMirrorAngles,
+for n, (energy, colAngle, torroidalMirrorAngle, secondCrystalRot,harmonic, c1, c2, m1, m2,tMin,tMaj) in enumerate(zip(energies, colMirrorAngles,
                                                                                             torroidalMirrorAngles,secondCrystalRots,harmonics,
-                                                                                            coating1s, coating2s, mirror1types, mirror2types)):
+                                                                                            coating1s, coating2s, mirror1types, mirror2types,
+                                                                                            torrMinors,torrMajors)):
     results[n],eResults[n], beams[n], createdRays[n] = bm31_oasys.run(energy=energy, colMirrorRad=colAngle, eRange=eRange,
                                                       torrAnglemRad=torroidalMirrorAngle, secondCrystalRot=secondCrystalRot,  
                                                       nrays = nrays, writeBeam=True, autoStart=True, harmonic = harmonic, coating1=c1, 
-                                                      coating2=c2)
+                                                      coating2=c2, torrMajor=tMaj, torrMinor=tMin)
 
 intPlot = []
 if os.path.exists(resultsFile):
