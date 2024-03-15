@@ -158,7 +158,7 @@ if not os.path.exists(f'{direc}/config/'):
 
 def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, writeBeam=True, 
         nrays = 100000, traceStart = 0, autoStart = False, harmonic = False, coating1 = 'Rh', coating2 = 'Rh',mirror1type = 'spherical',
-        mirror2type = 'torroidal', torrMajor = 1067159.1907, torrMinor = 6.4533):
+        mirror2type = 'torroidal', torrMajor = 1067159.1907, torrMinor = 6.4533, slitx = 0.4, slitz = 1):
 
     torrAngleDeg = mradSurface_to_degNorm(torrAnglemRad)
     colMirrorDeg = mradSurface_to_degNorm(colMirrorRad)
@@ -168,9 +168,10 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     fname = 'output.dat'
 
     config = {'energy':energy,'eRange':eRange, 'colMirrorRad': colMirrorRad, 'torrAnglemRad':torrAnglemRad, 'secondCrystalRot':secondCrystalRot,
-              'nrays':nrays, 'harmonic':harmonic, 'coating1':coating1, 'coating2':coating2,'torrMajor':torrMajor,'torrMinor':torrMinor}
+              'nrays':nrays, 'harmonic':harmonic, 'coating1':coating1, 'coating2':coating2,'torrMajor':torrMajor,'torrMinor':torrMinor, 
+              'slitx':slitx, 'slitz':slitz}
     startDct = {'energy':0, 'eRange': 0, 'colMirrorRad':2, 'secondCrystalRot':4,'torrAnglemRad':5,'nrays':0, 'harmonic': 3, 'coating1':2,
-                'coating2':5, 'torrMajor':5, 'torrMinor':5}
+                'coating2':5, 'torrMajor':5, 'torrMinor':5, 'slitx':6,'slitz':6}
     if os.path.exists(configFile):
         oldConfig = readConfig(configFile)
         autoTraceStart = whereStart(config,oldConfig,startDct)
@@ -361,8 +362,8 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     oe6.F_SCREEN = 1
     oe6.I_SLIT = numpy.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     oe6.N_SCREEN = 1
-    oe6.RX_SLIT = numpy.array([0.4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-    oe6.RZ_SLIT = numpy.array([2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    oe6.RX_SLIT = numpy.array([slitx, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    oe6.RZ_SLIT = numpy.array([slitz, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     oe6.T_IMAGE = 150.0
     oe6.T_INCIDENCE = 0.0
     oe6.T_REFLECTION = 180.0
@@ -418,12 +419,12 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
         print("    Running optical element: %d"%(5))
         beam.traceOE(oe5,5)
 
-    if writeBeam:
+    if writeBeam and traceStart < 6:
         print(f'writing {beamFile}.05')
         beam.write(f"{beamFile}.05")
 
     #run optical element 6
-    if traceStart < 7:
+    if traceStart < 7 and traceStart < 7:
         print("    Running optical element: %d"%(6))
         beam.traceOE(oe6,6)
 
