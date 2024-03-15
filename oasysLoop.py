@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 
-energies = np.arange(9000,10001,1000)
+energies = np.arange(9000,9001,1000)
 harmonics = [False]*len(energies)
 
 harmonicEnergies = energies*3
@@ -14,10 +14,10 @@ harmonics += [True]*len(harmonicEnergies)
 energies = np.append(energies,harmonicEnergies)
 
 
-colMirrorAngles = [3.002]*len(energies)
-torroidalMirrorAngles = [3.002]*len(energies) #mrad from surface
+colMirrorAngles = [2]*len(energies)
+torroidalMirrorAngles = [2]*len(energies) #mrad from surface
 secondCrystalRots = [0]*len(energies)
-coating1s = ['Rh']*len(energies)
+coating1s = ['Pt']*len(energies)
 coating2s = coating1s
 mirror1types = ['spherical']*len(energies)
 mirror2types = ['torroidal']*len(energies)
@@ -25,7 +25,7 @@ results = {}
 eResults = {}
 beams = {}
 createdRays = {}
-nrays = 100000
+nrays = 1000000
 eRange = 50
 plot = True
 
@@ -71,7 +71,7 @@ for n in results:
     photonDensityF = NphotonsF/(fwhmH*fwhmV)
     intPlot.append(photonDensityF)
     if fwhmE == None:
-        fwhmEstring = f"energy fwhm: NA\n"
+        fwhmEstring = "energy fwhm: NA\n"
         fwhmE = 'NA'
     else:
         fwhmEstring = f"energy fwhm: {fwhmE:.6f} eV\n"
@@ -85,7 +85,7 @@ for n in results:
     f"source flux density: {fluxInitial:.6e} photons/(s 0.1%bw)\n"
     f"source total photons/s: {NphotonsI:.6e}\n"
     f"total created rays: {cr}\n"
-    f"intensity: {intensity:.1e}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
+    f"intensity: {intensity:.2e}\n" #result parameters: nrays, good_rays, fwhm_h, fwhm_v, fwhm_coordinates_h, fwhm_coordinates_v. #lengths in cm
     f"created/accepted: {cr/nrays}\n"
     f"final photons/s: {NphotonsF:.6e}\n"
     f"final photon density (p/(s mm\u00b2)): {photonDensityF:.6e}\n"

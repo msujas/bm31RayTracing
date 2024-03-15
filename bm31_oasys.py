@@ -10,21 +10,24 @@ import matplotlib.pyplot as plt
 from enum import Enum
 
 direc = os.path.dirname(os.path.realpath(__file__))
-energy = 15000
-harmonic = True
-torroidalMirrorAngle = 3 #mrad from surface
+energy = 9000
+harmonic = False
+
 secondCrystalRot = 0.00 #0.001 for detuning 60%
 firstMirrorAngle = 3
-coating1 = 'Pt'
-coating2 = 'Pt'
+torroidalMirrorAngle = 3 #mrad from surface
+torrMajor = 1067159.1907
+torrMinor = 6.4533
+coating1 = 'Rh'
+coating2 = 'Rh'
 mirror1type = 'spherical'
 mirror2type = 'torroidal'
 
 dspacing = 3.13379
 nrays = 1000000
-eRange = 50
+eRange = 30
 
-autoStart = False #set to False with first use
+autoStart = True #set to False with first use
 traceStart = 0
 
 
@@ -100,7 +103,8 @@ class Coating(Enum):
         elif self.value == 'Si':
             return bytes(f'{direc}/SiReflec_4p9_150.dat',encoding = 'utf-8')
 
-def mirrorType(oe,coatingFile,angle, mtype):
+def mirrorType(coatingFile,angle, mtype,torrMajor = 1067159.1907, torrMinor = 6.4533):
+    oe = Shadow.OE()
     if mtype == 'collimating' or mtype == 'spherical':
         oe.DUMMY = 1.0
         oe.FCYL = 1
@@ -116,14 +120,13 @@ def mirrorType(oe,coatingFile,angle, mtype):
         oe.RLEN2 = 50.0
         oe.RWIDX1 = 4.0
         oe.RWIDX2 = 4.0
-        oe.SIMAG = 1.00000003e+16
-        oe.SSOUR = 2886.3
+        oe.SIMAG = 1.00000003e+16 #image side focal diastance
+        oe.SSOUR = 2886.3 #object side focal distance
         oe.THETA = angle
         oe.T_IMAGE = 0.0
         oe.T_INCIDENCE = angle
         oe.T_REFLECTION = angle
         oe.T_SOURCE = 200.0
-
     elif mtype == 'torroidal':
         oe.DUMMY = 1.0
         oe.FHIT_C = 1
@@ -140,21 +143,22 @@ def mirrorType(oe,coatingFile,angle, mtype):
         oe.RLEN2 = 50.0
         oe.RWIDX1 = 5.0
         oe.RWIDX2 = 5.0
-        oe.R_MAJ = 1067159.1907 #meridional radius
-        oe.R_MIN = 6.4533 #torroidal radius
+        oe.R_MAJ = torrMajor #meridional radius. 1667159 - 2mrad, 1067159.1907 - 3mrad
+        oe.R_MIN = torrMinor #saggital radius. 4.24533 - 2mrad, 6.4533 - 3mrad
         oe.T_IMAGE = 1601.8
         oe.T_INCIDENCE = angle
         oe.T_REFLECTION = angle
         oe.T_SOURCE = 209.9
     else:
         raise ValueError(f'"{mtype}" is an invalid mirror type. Must be "spherical"/"collimating" or "torroidal"')
+    return oe
 
 if not os.path.exists(f'{direc}/config/'):
     os.makedirs(f'{direc}/config/')
 
 def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, writeBeam=True, 
         nrays = 100000, traceStart = 0, autoStart = False, harmonic = False, coating1 = 'Rh', coating2 = 'Rh',mirror1type = 'spherical',
-        mirror2type = 'torroidal'):
+        mirror2type = 'torroidal', torrMajor = 1067159.1907, torrMinor = 6.4533):
 
     torrAngleDeg = mradSurface_to_degNorm(torrAnglemRad)
     colMirrorDeg = mradSurface_to_degNorm(colMirrorRad)
@@ -164,9 +168,9 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     fname = 'output.dat'
 
     config = {'energy':energy,'eRange':eRange, 'colMirrorRad': colMirrorRad, 'torrAnglemRad':torrAnglemRad, 'secondCrystalRot':secondCrystalRot,
-              'nrays':nrays, 'harmonic':harmonic, 'coating1':coating1, 'coating2':coating2}
+              'nrays':nrays, 'harmonic':harmonic, 'coating1':coating1, 'coating2':coating2,'torrMajor':torrMajor,'torrMinor':torrMinor}
     startDct = {'energy':0, 'eRange': 0, 'colMirrorRad':2, 'secondCrystalRot':4,'torrAnglemRad':5,'nrays':0, 'harmonic': 3, 'coating1':2,
-                'coating2':5}
+                'coating2':5, 'torrMajor':5, 'torrMinor':5}
     if os.path.exists(configFile):
         oldConfig = readConfig(configFile)
         autoTraceStart = whereStart(config,oldConfig,startDct)
@@ -189,11 +193,11 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     print(f'beginning at {traceStart}')
     oe0 = Shadow.Source()
     oe1 = Shadow.OE()
-    oe2 = Shadow.OE()
+    #oe2 = Shadow.OE()
     oe3 = Shadow.OE()
     oe4 = Shadow.OE()
-    oe5 = Shadow.OE()
-
+    #oe5 = Shadow.OE()
+    oe6 = Shadow.OE()
     beam = Shadow.Beam()
 
 
@@ -303,7 +307,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     oe1.T_SOURCE = 2686.3
 
     #oe2 - first mirror (collimatring)
-    mirrorType(oe2,coatingFile1,colMirrorDeg,mtype = mirror1type)
+    oe2 = mirrorType(coatingFile1,colMirrorDeg,mtype = mirror1type)
 
     #oe3 - first mono crystal
     oe3.ALPHA = 0
@@ -349,7 +353,20 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     oe4.X_ROT = secondCrystalRot
 
     #oe5 - torroidal mirror
-    mirrorType(oe5,coatingFile2,torrAngleDeg,mtype = mirror2type)
+    oe5 = mirrorType(coatingFile2,torrAngleDeg,mtype = mirror2type, torrMajor=torrMajor, torrMinor=torrMinor)
+
+    oe6.DUMMY = 1.0
+    oe6.FWRITE = 3
+    oe6.F_REFRAC = 2
+    oe6.F_SCREEN = 1
+    oe6.I_SLIT = numpy.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    oe6.N_SCREEN = 1
+    oe6.RX_SLIT = numpy.array([0.4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    oe6.RZ_SLIT = numpy.array([2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    oe6.T_IMAGE = 150.0
+    oe6.T_INCIDENCE = 0.0
+    oe6.T_REFLECTION = 180.0
+    oe6.T_SOURCE = -150.0
 
     #Run SHADOW to create the source
     if traceStart < 1:
@@ -405,6 +422,15 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
         print(f'writing {beamFile}.05')
         beam.write(f"{beamFile}.05")
 
+    #run optical element 6
+    if traceStart < 7:
+        print("    Running optical element: %d"%(6))
+        beam.traceOE(oe6,6)
+
+    if writeBeam:
+        print(f'writing {beamFile}.06')
+        beam.write(f"{beamFile}.06")
+
     result = beam.histo2(1,3, nbins= 101,nolost=1)
     if fname != None:
         fsplit = os.path.splitext(fname)
@@ -429,7 +455,7 @@ if __name__ == '__main__':
     result, eResult, beam, createdRays = run(energy = energy, eRange = eRange, colMirrorRad=firstMirrorAngle, torrAnglemRad=torroidalMirrorAngle, 
                                 secondCrystalRot =  secondCrystalRot, writeBeam=writeBeam, nrays=nrays, 
                                 traceStart=traceStart, autoStart=autoStart, harmonic=harmonic, coating1=coating1, coating2=coating2,
-                                mirror1type=mirror1type,mirror2type=mirror2type)
+                                mirror1type=mirror1type,mirror2type=mirror2type, torrMajor=torrMajor, torrMinor=torrMinor)
     #print(result.keys())
     
     intensity = result['intensity']
@@ -459,6 +485,6 @@ if __name__ == '__main__':
     f"{eFWHMstring}")
     print(string)
     Shadow.ShadowTools.plotxy(beam,1,3,nbins=101,nolost=1,title="Real space")
-    Shadow.ShadowTools.histo1(beam,11,nbins = 501, nolost=  1, ref = 23)
+    Shadow.ShadowTools.histo1(beam,11,nbins = 201, nolost=  1, ref = 23)
     #Shadow.ShadowTools.histo1(beam,11)
 

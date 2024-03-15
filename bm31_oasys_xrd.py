@@ -12,7 +12,7 @@ import os
 energy = 47000*3
 focalEnergy = 47000
 meridionalDist = 10000
-nrays = 500000
+nrays = 100000
 eRange = 200
 harmonic = True
 autoStart = True #set to False for first use
@@ -276,7 +276,7 @@ if __name__ == '__main__':
     f"meridional fdist: {meridionalDist} cm\n"
     f"mono energy: {energy} eV\n"
     f"focal distance: {f2:.1f} cm\n"
-    f"intensity: {intensity:.1e}\n"
+    f"intensity: {intensity:.2e}\n"
     f"final photons/s: {NphotonsF:.6e}\n"
     f"fwhm_h: {fwhmH} mm\n"
     f"fwhm_v: {fwhmV} mm\n"
@@ -288,7 +288,7 @@ if __name__ == '__main__':
     if harmonic:
         nbins = 10001
     else:
-        nbins = 501
+        nbins = 201
     Shadow.ShadowTools.histo1(beam,11,nbins = nbins, nolost=  1, ref = 23)
     
     #plt.stairs(eResult['histogram'],eResult['bins'])

@@ -19,3 +19,6 @@ SRDISTR
 SRSPEC
 tmp.*
 __pycache__
+bragg111v2.dat
+output_E.dat
+spectrum.dat
