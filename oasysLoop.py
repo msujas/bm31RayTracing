@@ -14,8 +14,8 @@ harmonics += [True]*len(harmonicEnergies)
 energies = np.append(energies,harmonicEnergies)
 
 
-colMirrorAngles = [2]*len(energies)
-torroidalMirrorAngles = [2]*len(energies) #mrad from surface
+colMirrorAngles = [3]*len(energies)
+torroidalMirrorAngles = [3]*len(energies) #mrad from surface
 secondCrystalRots = [0]*len(energies)
 coating1s = ['Pt']*len(energies)
 coating2s = coating1s
