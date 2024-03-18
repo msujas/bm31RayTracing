@@ -29,6 +29,8 @@ beams = {}
 createdRays = {}
 nrays = 1000000
 eRange = 50
+slitx = 0.4
+slitz = 1
 plot = True
 
 resultsFile = 'resultsXAS.dat'
@@ -40,7 +42,7 @@ for n, (energy, colAngle, torroidalMirrorAngle, secondCrystalRot,harmonic, c1, c
     results[n],eResults[n], beams[n], createdRays[n] = bm31_oasys.run(energy=energy, colMirrorRad=colAngle, eRange=eRange,
                                                       torrAnglemRad=torroidalMirrorAngle, secondCrystalRot=secondCrystalRot,  
                                                       nrays = nrays, writeBeam=True, autoStart=True, harmonic = harmonic, coating1=c1, 
-                                                      coating2=c2, torrMajor=tMaj, torrMinor=tMin)
+                                                      coating2=c2, torrMajor=tMaj, torrMinor=tMin, slitx=slitx, slitz=slitz)
 
 intPlot = []
 if os.path.exists(resultsFile):

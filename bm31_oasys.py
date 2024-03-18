@@ -22,6 +22,8 @@ coating1 = 'Rh'
 coating2 = 'Rh'
 mirror1type = 'spherical'
 mirror2type = 'torroidal'
+slitx = 0.4
+slitz = 1
 
 dspacing = 3.13379
 nrays = 1000000
@@ -456,7 +458,7 @@ if __name__ == '__main__':
     result, eResult, beam, createdRays = run(energy = energy, eRange = eRange, colMirrorRad=firstMirrorAngle, torrAnglemRad=torroidalMirrorAngle, 
                                 secondCrystalRot =  secondCrystalRot, writeBeam=writeBeam, nrays=nrays, 
                                 traceStart=traceStart, autoStart=autoStart, harmonic=harmonic, coating1=coating1, coating2=coating2,
-                                mirror1type=mirror1type,mirror2type=mirror2type, torrMajor=torrMajor, torrMinor=torrMinor)
+                                mirror1type=mirror1type,mirror2type=mirror2type, torrMajor=torrMajor, torrMinor=torrMinor,slitx=slitx,slitz=slitz)
     #print(result.keys())
     
     intensity = result['intensity']
