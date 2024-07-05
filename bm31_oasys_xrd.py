@@ -8,18 +8,21 @@ from srxraylib.sources import srfunc
 import matplotlib.pyplot as plt
 from bm31_oasys import dctToFile, readConfig, whereStart, fluxEnergy, fluxDensity, direc, readCreatedRays, writeCreatedRays, initialPhotons, finalPhotons
 import os
+import scipy.constants as scicon
 
-energy = 47000*3
+energy = 47000
 focalEnergy = 47000
-meridionalDist = 10000
-nrays = 100000
+meridionalDist = 1000000
+nrays = 1000000
 eRange = 200
-harmonic = True
+harmonic = False
 autoStart = True #set to False for first use
 
 
 f1 = 3032.8
 f2 = 1811.6
+
+wavelength = scicon.h*scicon.c/(energy*scicon.elementary_charge)*10**10
 
 def mradSurface_to_degNorm(mrad):
     return 90-mrad*180/(numpy.pi*1000)
@@ -260,6 +263,7 @@ if __name__ == '__main__':
     fwhmH = result['fwhm_h']*10 #mm
     fwhmV = result['fwhm_v']*10 #mm
     fwhmE = eResult["fwhm"]
+    fwhmW = wavelength*fwhmE/energy
     intRatio = intensity/nrays
     energyIndex = np.abs(fluxEnergy-energy).argmin()
     fluxInitial = fluxDensity[energyIndex]
@@ -269,6 +273,7 @@ if __name__ == '__main__':
     fluxEnd = intRatio*fluxInitial #this is approximating equal flux density in the energy range
     f2 = srTof2(energy, harmonic,sr)
     string = (f"{energy} eV\n"
+    f"{wavelength} Å\n"
     f"source flux density: {fluxInitial:.6e}\n photons/(s 0.1%bw)"
     f"source total photons/s: {NphotonsI:.6e}\n"
     f"total created rays: {createdRays}\n"
@@ -280,7 +285,8 @@ if __name__ == '__main__':
     f"final photons/s: {NphotonsF:.6e}\n"
     f"fwhm_h: {fwhmH} mm\n"
     f"fwhm_v: {fwhmV} mm\n"
-    f"energy fwhm: {fwhmE} eV\n"
+    f"energy fwhm: {fwhmE:.2f} eV\n"
+    f"wavelength fwhm {fwhmW:.3e} Å\n"
     f"intensity/fwhm_v: {intensity/fwhmV:.1f}\n"
     f"intensity/(fwhm_v*fwhm_h) {intensity/(fwhmV*fwhmH):.1f}\n")
     print(string)

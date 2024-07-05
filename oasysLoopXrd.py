@@ -17,7 +17,7 @@ createdRays = {}
 sr = bm31_oasys_xrd.saggitalRadius(focalEnergy)
 eRange = 200
 
-plot = True
+plot = False
 
 resultsFile = 'resultsXRD.dat'
 

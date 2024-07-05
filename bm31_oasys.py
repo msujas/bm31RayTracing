@@ -18,16 +18,16 @@ firstMirrorAngle = 3
 torroidalMirrorAngle = 3 #mrad from surface
 torrMajor = 1067159.
 torrMinor = 6.4533
-coating1 = 'Rh'
-coating2 = 'Rh'
+coating1 = 'Si'
+coating2 = 'Si'
 mirror1type = 'spherical'
-mirror2type = 'torroidal'
-slitx = 0.4
+mirror2type = 'spherical'
+slitx = 1
 slitz = 1
-
+runMirrors = True
 dspacing = 3.13379
 nrays = 1000000
-eRange = 30
+eRange = 50
 
 autoStart = True #set to False with first use
 traceStart = 0
@@ -93,6 +93,16 @@ def whereStart(config,oldConfig, startDct):
             return startDct[item]
     return startDct[item]+1
 
+def mirrorSagitalRadius(angle,f1 = 3242.7,f2 = 1601.8):
+    #angle in deg
+    angleRad = angle*np.pi/180
+    return (2*f1*f2*np.sin(angleRad)/(f1+f2))
+
+def mirrorMerRadius(angle, f1 = 10**26, f2= 1601.8):
+    angleRad = angle*np.pi/180
+    sRad = mirrorSagitalRadius(angleRad,f1,f2)
+    return sRad/np.sin(angleRad)**2
+
 class Coating(Enum):
     Rh = 'Rh'
     Pt = 'Pt'
@@ -105,7 +115,12 @@ class Coating(Enum):
         elif self.value == 'Si':
             return bytes(f'{direc}/SiReflec_4p9_150.dat',encoding = 'utf-8')
 
-def mirrorType(coatingFile,angle, mtype,torrMajor = 1067159.1907, torrMinor = 6.4533):
+def mirrorType(coatingFile,angle, mtype, sdist, imgdist,colsimg, colssour,torrMajor = None, torrMinor = None):
+    #dist = 200 for mirror 1, 209.9 for mirror2
+    if torrMinor == None:
+        torrMinor = mirrorSagitalRadius(90-angle)
+    if torrMajor == None:
+        torrMajor = mirrorMerRadius(90-angle)
     oe = Shadow.OE()
     if mtype == 'collimating' or mtype == 'spherical':
         oe.DUMMY = 1.0
@@ -122,13 +137,13 @@ def mirrorType(coatingFile,angle, mtype,torrMajor = 1067159.1907, torrMinor = 6.
         oe.RLEN2 = 50.0
         oe.RWIDX1 = 4.0
         oe.RWIDX2 = 4.0
-        oe.SIMAG = 1.00000003e+16 #image side focal diastance
-        oe.SSOUR = 2886.3 #object side focal distance
+        oe.SIMAG = colsimg #1.00000003e+16 #image side focal diastance
+        oe.SSOUR = colssour #2886.3 #object side focal distance
         oe.THETA = angle
-        oe.T_IMAGE = 0.0
+        oe.T_IMAGE = imgdist
         oe.T_INCIDENCE = angle
         oe.T_REFLECTION = angle
-        oe.T_SOURCE = 200.0
+        oe.T_SOURCE = sdist
     elif mtype == 'torroidal':
         oe.DUMMY = 1.0
         oe.FHIT_C = 1
@@ -147,10 +162,10 @@ def mirrorType(coatingFile,angle, mtype,torrMajor = 1067159.1907, torrMinor = 6.
         oe.RWIDX2 = 5.0
         oe.R_MAJ = torrMajor #meridional radius. 1667159 - 2mrad, 1067159.1907 - 3mrad
         oe.R_MIN = torrMinor #saggital radius. 4.24533 - 2mrad, 6.4533 - 3mrad
-        oe.T_IMAGE = 1601.8
+        oe.T_IMAGE = imgdist
         oe.T_INCIDENCE = angle
         oe.T_REFLECTION = angle
-        oe.T_SOURCE = 209.9
+        oe.T_SOURCE = sdist
     else:
         raise ValueError(f'"{mtype}" is an invalid mirror type. Must be "spherical"/"collimating" or "torroidal"')
     return oe
@@ -158,9 +173,9 @@ def mirrorType(coatingFile,angle, mtype,torrMajor = 1067159.1907, torrMinor = 6.
 if not os.path.exists(f'{direc}/config/'):
     os.makedirs(f'{direc}/config/')
 
-def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3.0019663, secondCrystalRot = 0, writeBeam=True, 
+def run(energy = 9000, eRange = 100, colMirrorRad = 3, torrAnglemRad = 3, secondCrystalRot = 0, writeBeam=True, 
         nrays = 100000, traceStart = 0, autoStart = False, harmonic = False, coating1 = 'Rh', coating2 = 'Rh',mirror1type = 'spherical',
-        mirror2type = 'torroidal', torrMajor = 1067159.1907, torrMinor = 6.4533, slitx = 0.4, slitz = 1):
+        mirror2type = 'torroidal', torrMajor = 1067159.1907, torrMinor = 6.4533, slitx = 0.4, slitz = 1, runMirrors=True):
 
     torrAngleDeg = mradSurface_to_degNorm(torrAnglemRad)
     colMirrorDeg = mradSurface_to_degNorm(colMirrorRad)
@@ -171,9 +186,9 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
 
     config = {'energy':energy,'eRange':eRange, 'colMirrorRad': colMirrorRad, 'torrAnglemRad':torrAnglemRad, 'secondCrystalRot':secondCrystalRot,
               'nrays':nrays, 'harmonic':harmonic, 'coating1':coating1, 'coating2':coating2,'torrMajor':torrMajor,'torrMinor':torrMinor, 
-              'slitx':slitx, 'slitz':slitz}
+              'slitx':slitx, 'slitz':slitz, 'runMirrors':runMirrors}
     startDct = {'energy':0, 'eRange': 0, 'colMirrorRad':2, 'secondCrystalRot':4,'torrAnglemRad':5,'nrays':0, 'harmonic': 3, 'coating1':2,
-                'coating2':5, 'torrMajor':5, 'torrMinor':5, 'slitx':6,'slitz':6}
+                'coating2':5, 'torrMajor':5, 'torrMinor':5, 'slitx':6,'slitz':6,'runMirrors':2}
     if os.path.exists(configFile):
         oldConfig = readConfig(configFile)
         autoTraceStart = whereStart(config,oldConfig,startDct)
@@ -310,7 +325,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     oe1.T_SOURCE = 2686.3
 
     #oe2 - first mirror (collimatring)
-    oe2 = mirrorType(coatingFile1,colMirrorDeg,mtype = mirror1type)
+    oe2 = mirrorType(coatingFile1,colMirrorDeg, sdist = 200, imgdist=0, colsimg=1e16, colssour=2886.3,mtype = mirror1type)
 
     #oe3 - first mono crystal
     oe3.ALPHA = 0
@@ -356,7 +371,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     oe4.X_ROT = secondCrystalRot
 
     #oe5 - torroidal mirror
-    oe5 = mirrorType(coatingFile2,torrAngleDeg,mtype = mirror2type, torrMajor=torrMajor, torrMinor=torrMinor)
+    oe5 = mirrorType(coatingFile2,torrAngleDeg, sdist = 209.9, imgdist=1601.8,colsimg=1601.8, colssour=1e16,mtype = mirror2type, torrMajor=torrMajor, torrMinor=torrMinor)
 
     oe6.DUMMY = 1.0
     oe6.FWRITE = 3
@@ -379,7 +394,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
     if writeBeam and traceStart < 1:
         print(f'writing {beamFile}.00')
         beam.write(f"{beamFile}.00")
-
+        
     #run optical element 1
     if traceStart < 2:
         print("    Running optical element: %d"%(1))
@@ -390,7 +405,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
         beam.write(f"{beamFile}.01")
 
     #run optical element 2
-    if traceStart < 3:
+    if traceStart < 3 and runMirrors:
         print("    Running optical element: %d"%(2))
         beam.traceOE(oe2,2)
 
@@ -417,7 +432,7 @@ def run(energy = 9000, eRange = 100, colMirrorRad = 3.0019663, torrAnglemRad = 3
         beam.write(f"{beamFile}.04")
 
     #run optical element 5
-    if traceStart < 6:
+    if traceStart < 6 and runMirrors:
         print("    Running optical element: %d"%(5))
         beam.traceOE(oe5,5)
 
@@ -458,7 +473,8 @@ if __name__ == '__main__':
     result, eResult, beam, createdRays = run(energy = energy, eRange = eRange, colMirrorRad=firstMirrorAngle, torrAnglemRad=torroidalMirrorAngle, 
                                 secondCrystalRot =  secondCrystalRot, writeBeam=writeBeam, nrays=nrays, 
                                 traceStart=traceStart, autoStart=autoStart, harmonic=harmonic, coating1=coating1, coating2=coating2,
-                                mirror1type=mirror1type,mirror2type=mirror2type, torrMajor=torrMajor, torrMinor=torrMinor,slitx=slitx,slitz=slitz)
+                                mirror1type=mirror1type,mirror2type=mirror2type, torrMajor=torrMajor, torrMinor=torrMinor,slitx=slitx,slitz=slitz,
+                                runMirrors=runMirrors)
     #print(result.keys())
     
     intensity = result['intensity']
